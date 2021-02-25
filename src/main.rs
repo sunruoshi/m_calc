@@ -124,17 +124,14 @@ fn time_format(time: u32) -> Vec<u32> {
 }
 
 fn answer_check(answer: u32, op: u32, bg: u32, sm: u32) -> bool {
-    let correct_answer: u32;
-    if op == 0 {
-        correct_answer = bg + sm;
+    return if op == 0 {
+        answer == bg + sm
     } else {
-        correct_answer = bg - sm;
+        answer == bg - sm
     };
-    answer == correct_answer
 }
 
 fn input_number(low: u32, high: u32) -> u32 {
-    let output: u32;
     loop {
         let mut input = String::new();
         io::stdin().read_line(&mut input).expect("发生了一些错误");
@@ -150,9 +147,7 @@ fn input_number(low: u32, high: u32) -> u32 {
             println!("输入范围内的数字:{} - {}", low, high);
             continue;
         } else {
-            output = valid;
-            break;
+            return valid;
         }
     }
-    output
 }
