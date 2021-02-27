@@ -1,7 +1,7 @@
 use rand::Rng;
+use std::collections::VecDeque;
 use std::convert::TryInto;
 use std::io;
-use std::mem;
 use std::time::SystemTime;
 
 fn main() {
@@ -20,31 +20,33 @@ fn calculate(max_count: u32, num_range: u32) {
     let mut count: u32 = 0;
     let mut score: u32 = 0;
 
-    let mut failed = Vec::new();
+    let mut failed = VecDeque::new();
 
     let start = SystemTime::now();
 
     loop {
-        let mut num1 = rand::thread_rng().gen_range(1..num_range);
-        let mut num2 = rand::thread_rng().gen_range(1..num_range);
-        let operater = rand::thread_rng().gen_range(0..2);
+        let mut formula = [
+            rand::thread_rng().gen_range(0..2),
+            rand::thread_rng().gen_range(1..num_range),
+            rand::thread_rng().gen_range(1..num_range),
+        ];
 
-        if operater == 1 && num1 < num2 {
-            mem::swap(&mut num1, &mut num2);
+        if formula[0] == 1 && formula[1] < formula[2] {
+            formula.swap(1, 2);
         }
 
-        if operater == 0 {
-            println!("({}) {} + {} = __ ", count + 1, num1, num2);
+        if formula[0] == 0 {
+            println!("({}) {} + {} = __ ", count + 1, formula[1], formula[2]);
         } else {
-            println!("({}) {} - {} = __ ", count + 1, num1, num2);
+            println!("({}) {} - {} = __ ", count + 1, formula[1], formula[2]);
         }
 
         let answer = input_number(u32::MIN, u32::MAX);
 
-        if answer_check(answer, operater, num1, num2) {
+        if answer_check(answer, formula) {
             score += 1;
         } else {
-            failed.push([num1, num2, operater]);
+            failed.push_back(formula);
         }
 
         count += 1;
@@ -65,11 +67,11 @@ fn calculate(max_count: u32, num_range: u32) {
     }
     if score != max_count {
         println!("错题: {}", failed.len());
-        for [num1, num2, op] in &failed {
-            if op == &0 {
-                println!("{} + {} = __ ", num1, num2);
+        for formula in &failed {
+            if formula[0] == 0 {
+                println!("{} + {} = __ ", formula[1], formula[2]);
             } else {
-                println!("{} - {} = __ ", num1, num2);
+                println!("{} - {} = __ ", formula[1], formula[2]);
             }
         }
 
@@ -81,19 +83,19 @@ fn calculate(max_count: u32, num_range: u32) {
 
         if choose.trim() == "y" {
             while failed.len() > 0 {
-                if let Some(nums) = failed.pop() {
-                    if nums[2] == 0 {
-                        println!("{} + {} = __ ", nums[0], nums[1]);
+                if let Some(formula) = failed.pop_front() {
+                    if formula[0] == 0 {
+                        println!("{} + {} = __ ", formula[1], formula[2]);
                     } else {
-                        println!("{} - {} = __ ", nums[0], nums[1]);
+                        println!("{} - {} = __ ", formula[1], formula[2]);
                     }
 
                     let answer = input_number(u32::MIN, u32::MAX);
 
-                    if answer_check(answer, nums[2], nums[0], nums[1]) {
+                    if answer_check(answer, formula) {
                         println!("回答正确!");
                     } else {
-                        failed.push([nums[0], nums[1], nums[2]]);
+                        failed.push_front(formula);
                         println!("回答错误!");
                     }
                 }
@@ -109,11 +111,11 @@ fn time_format(time: u32) -> Vec<u32> {
     [time / 60, time % 60].to_vec()
 }
 
-fn answer_check(answer: u32, op: u32, num1: u32, num2: u32) -> bool {
-    return if op == 0 {
-        answer == num1 + num2
+fn answer_check(answer: u32, formula: [u32; 3]) -> bool {
+    return if formula[0] == 0 {
+        answer == formula[1] + formula[2]
     } else {
-        answer == num1 - num2
+        answer == formula[1] - formula[2]
     };
 }
 
