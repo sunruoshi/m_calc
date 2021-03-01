@@ -1,6 +1,5 @@
 mod util;
 
-use rand::Rng;
 use std::{collections::VecDeque, convert::TryInto, time::SystemTime};
 use util::{formula::Formula, utils};
 
@@ -22,38 +21,19 @@ fn main() {
         }
         break range;
     };
-    let formula_list = generate_formula(num_total, num_range);
-    calculate(formula_list);
+    let formula_list = utils::generate_formula(num_total, num_range);
+    calculate(&formula_list);
 }
 
-fn generate_formula(count: u32, range: [u32; 2]) -> VecDeque<Formula> {
-    let mut formula_list: VecDeque<Formula> = VecDeque::new();
-    for i in 1..count + 1 {
-        let mut formula = Formula {
-            index: i,
-            operator: rand::thread_rng().gen_range(0..2),
-            num1: rand::thread_rng().gen_range(range[0]..range[1]),
-            num2: rand::thread_rng().gen_range(range[0]..range[1]),
-        };
-        formula.validate();
-        formula_list.push_back(formula);
-    }
-    formula_list
-}
-
-fn calculate(list: VecDeque<Formula>) {
+fn calculate(list: &VecDeque<Formula>) {
     let total: u32 = list.len().try_into().unwrap();
     let mut score: u32 = 0;
-
-    let mut failed_list: VecDeque<Formula> = VecDeque::new();
-
+    let mut failed_list = VecDeque::new();
     let time_start = SystemTime::now();
 
     for formula in list {
         println!("{}", formula.get_formula());
-
         let answer = utils::input_number(u32::MIN, u32::MAX);
-
         if answer == formula.get_answer() {
             score += 1;
         } else {
@@ -71,24 +51,18 @@ fn calculate(list: VecDeque<Formula>) {
             println!("Error: {:?}", e);
         }
     }
-
     if score != total {
         println!("错题: {}", failed_list.len());
         for formula in &failed_list {
             println!("{}", formula.get_formula());
         }
-
         println!("是否订正? (确定请输入y)");
-
         let choose = utils::input_char();
-
         if choose == String::from("y") {
             while failed_list.len() > 0 {
                 if let Some(formula) = failed_list.pop_front() {
                     println!("{}", formula.get_formula());
-
                     let answer = utils::input_number(u32::MIN, u32::MAX);
-
                     if answer == formula.get_answer() {
                         println!("回答正确!");
                     } else {
@@ -99,7 +73,7 @@ fn calculate(list: VecDeque<Formula>) {
             }
             println!("订正完成, 太棒了!");
         } else {
-            println!("程序已关闭")
+            println!("计算已结束!")
         }
     }
 }

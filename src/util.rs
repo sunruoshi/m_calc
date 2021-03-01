@@ -5,7 +5,6 @@ pub mod formula {
         pub num1: u32,
         pub num2: u32,
     }
-
     impl Formula {
         pub fn get_answer(&self) -> u32 {
             return if self.operator == 0 {
@@ -32,6 +31,24 @@ pub mod formula {
 }
 
 pub mod utils {
+    use super::formula::Formula;
+    use rand::Rng;
+    use std::collections::VecDeque;
+    
+    pub fn generate_formula(count: u32, range: [u32; 2]) -> VecDeque<Formula> {
+        let mut formula_list: VecDeque<Formula> = VecDeque::new();
+        for i in 1..count + 1 {
+            let mut formula = Formula {
+                index: i,
+                operator: rand::thread_rng().gen_range(0..2),
+                num1: rand::thread_rng().gen_range(range[0]..range[1]),
+                num2: rand::thread_rng().gen_range(range[0]..range[1]),
+            };
+            formula.validate();
+            formula_list.push_back(formula);
+        }
+        formula_list
+    }
     pub fn input_number(low: u32, high: u32) -> u32 {
         loop {
             let mut input = String::new();
