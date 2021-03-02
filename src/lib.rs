@@ -2,22 +2,20 @@ use rand::Rng;
 use std::io::{ErrorKind, Read};
 use std::{collections::VecDeque, fs, process};
 
-pub struct Config {
-    pub user: String,
+pub struct User {
+    pub username: String,
     pub profile: String,
 }
 
-impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &str> {
+impl User {
+    pub fn new(args: &[String]) -> Result<User, &str> {
         if args.len() < 2 {
             return Err("not enough arguments");
         }
-        let mut profile_exists = true;
-        let user = args[1].clone();
-        let mut file = fs::File::open(&user.as_str()).unwrap_or_else(|error| {
+        let username = args[1].clone();
+        let mut file = fs::File::open(&username.as_str()).unwrap_or_else(|error| {
             if error.kind() == ErrorKind::NotFound {
-                profile_exists = false;
-                fs::File::create(&user.as_str()).unwrap_or_else(|error| {
+                fs::File::create(&username.as_str()).unwrap_or_else(|error| {
                     println!("Problem creating the file: {:?}", error);
                     process::exit(1);
                 })
@@ -27,10 +25,10 @@ impl Config {
             }
         });
         let mut profile = String::new();
-        if profile_exists {
-            file.read_to_string(&mut profile).unwrap();
-        }
-        Ok(Config { user, profile })
+
+        file.read_to_string(&mut profile).unwrap_or_else(|_| 0);
+
+        Ok(User { username, profile })
     }
 }
 
@@ -127,5 +125,22 @@ pub mod utils {
 
     pub fn get_time(time: u32) -> (u32, u32) {
         (time / 60, time % 60)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn formula_validate() {
+        let mut formula = Formula {
+            index: 1,
+            operator: 0,
+            num1: 1,
+            num2: 5,
+        };
+        formula.validate();
+        assert_eq!(formula.num1, 1);
     }
 }
