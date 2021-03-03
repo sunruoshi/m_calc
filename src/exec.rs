@@ -62,7 +62,9 @@ pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
         }
     }
 
-    fs::write(&user.username, user.profile + &log)?;
+    let path = format!("./logs/{}", &user.username);
+
+    fs::write(&path, user.profile + &log)?;
 
     Ok(())
 }

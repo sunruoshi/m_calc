@@ -13,9 +13,10 @@ impl User {
             return Err("not enough arguments");
         }
         let username = args[1].clone();
-        let mut file = fs::File::open(&username.as_str()).unwrap_or_else(|error| {
+        let path = format!("./logs/{}", &username);
+        let mut file = fs::File::open(&path).unwrap_or_else(|error| {
             if error.kind() == ErrorKind::NotFound {
-                fs::File::create(&username.as_str()).unwrap_or_else(|error| {
+                fs::File::create(&path).unwrap_or_else(|error| {
                     println!("Problem creating the file: {:?}", error);
                     process::exit(1);
                 })
@@ -142,5 +143,18 @@ mod test {
         };
         formula.validate();
         assert_eq!(formula.num1, 1);
+    }
+
+    #[test]
+    fn open_file() {
+        fs::File::open("./logs/test").unwrap_or_else(|error| {
+            if error.kind() == ErrorKind::NotFound {
+                fs::File::create("./logs/test").unwrap_or_else(|error| {
+                    panic!("Problem creating the file: {:?}", error);
+                })
+            } else {
+                panic!("Problem opening the file: {:?}", error);
+            }
+        });
     }
 }
