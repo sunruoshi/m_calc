@@ -144,9 +144,18 @@ pub mod utils {
         (time / 60, time % 60)
     }
 
-    pub fn print_profile(user: User) {
-        for line in user.profile.lines() {
-            println!("{}", line);
+    pub fn print_profile(user: &User) {
+        if user.profile.len() != 0 {
+            let mut count = 0;
+            user.profile.lines().for_each(|line| {
+                if line.contains("你的得分") {
+                    count += 1;
+                }
+                println!("{}", line);
+            });
+            println!("\n共找到{}条记录", count);
+        } else {
+            println!("无记录!")
         }
     }
 }

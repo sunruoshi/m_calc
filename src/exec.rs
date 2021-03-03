@@ -2,7 +2,7 @@ use crate::lib::{utils, Formula, User};
 use chrono::{DateTime, Local};
 use std::{collections::VecDeque, convert::TryInto, error::Error, fs, time::SystemTime};
 
-pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
+pub fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> {
     let now: DateTime<Local> = Local::now();
     let time_start: SystemTime = SystemTime::now();
     let total: u32 = list.len().try_into().unwrap();
@@ -61,7 +61,9 @@ pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
         println!("{}", now);
     }
 
-    fs::write(&(format!("./logs/{}", &user.username)), user.profile + &log)?;
+    user.profile = String::from(&user.profile) + &log;
+
+    fs::write(&(format!("./logs/{}", &user.username)), &user.profile)?;
 
     Ok(())
 }
