@@ -1,6 +1,10 @@
 use rand::Rng;
-use std::io::{ErrorKind, Read};
-use std::{collections::VecDeque, fs, process};
+use std::{
+    collections::VecDeque,
+    fs,
+    io::{ErrorKind, Read},
+    process,
+};
 
 pub struct User {
     pub username: String,
@@ -13,18 +17,20 @@ impl User {
             return Err("not enough arguments");
         }
         let username = args[1].clone();
-        let mut file = fs::File::open(&(format!("./logs/{}", &username))).unwrap_or_else(|error| {
-            if error.kind() == ErrorKind::NotFound {
-                fs::File::create(&(format!("./logs/{}", &username))).unwrap_or_else(|error| {
-                    println!("Problem creating the file: {:?}", error);
+        let mut file = fs::File::open(&(format!("./logs/{}", &username))).unwrap_or_else(
+            |error| -> fs::File {
+                if error.kind() == ErrorKind::NotFound {
+                    fs::File::create(&(format!("./logs/{}", &username))).unwrap_or_else(|error| {
+                        println!("Problem creating the file: {:?}", error);
+                        process::exit(1);
+                    })
+                } else {
+                    println!("Problem opening the file: {:?}", error);
                     process::exit(1);
-                })
-            } else {
-                println!("Problem opening the file: {:?}", error);
-                process::exit(1);
-            }
-        });
-        let mut profile = String::new();
+                }
+            },
+        );
+        let mut profile: String = String::new();
 
         file.read_to_string(&mut profile).unwrap_or_else(|_| 0);
 
