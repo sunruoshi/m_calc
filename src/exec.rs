@@ -4,11 +4,11 @@ use std::{collections::VecDeque, convert::TryInto, error::Error, fs, time::Syste
 
 pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
     let now: DateTime<Local> = Local::now();
-    let time_start = SystemTime::now();
+    let time_start: SystemTime = SystemTime::now();
     let total: u32 = list.len().try_into().unwrap();
     let mut score: u32 = 0;
-    let mut failed_list = VecDeque::new();
-    let mut log = String::new();
+    let mut failed_list: VecDeque<&Formula> = VecDeque::new();
+    let mut log: String = String::new();
 
     list.into_iter().for_each(|formula| {
         println!("{}", formula.get_formula());
@@ -21,7 +21,7 @@ pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
 
     match time_start.elapsed() {
         Ok(elapsed) => {
-            let time = utils::get_time(elapsed.as_secs().try_into().unwrap());
+            let time: (u32, u32) = utils::get_time(elapsed.as_secs().try_into().unwrap());
             log = format!(
                 "\n{}\n你的得分: {}分\n你的用时: {}分{}秒\n",
                 now,
