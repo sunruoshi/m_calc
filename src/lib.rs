@@ -20,10 +20,18 @@ impl User {
         let mut file = fs::File::open(&(format!("./logs/{}", &username))).unwrap_or_else(
             |error| -> fs::File {
                 if error.kind() == ErrorKind::NotFound {
-                    fs::File::create(&(format!("./logs/{}", &username))).unwrap_or_else(|error| {
-                        println!("Problem creating the file: {:?}", error);
+                    println!("用户未找到\n是否新建? (y/n)");
+                    if utils::read_input() == String::from("y") {
+                        fs::File::create(&(format!("./logs/{}", &username))).unwrap_or_else(
+                            |error| {
+                                println!("Problem creating the file: {:?}", error);
+                                process::exit(1);
+                            },
+                        )
+                    } else {
+                        println!("process exit");
                         process::exit(1);
-                    })
+                    }
                 } else {
                     println!("Problem opening the file: {:?}", error);
                     process::exit(1);
@@ -63,9 +71,9 @@ impl Formula {
     pub fn new_list() -> VecDeque<Formula> {
         let mut formula_list: VecDeque<Formula> = VecDeque::new();
         let (count, range) = Formula::list_args();
-        for i in 1..count + 1 {
+        for i in 0..count {
             let mut formula = Formula {
-                index: i,
+                index: i + 1,
                 operator: rand::thread_rng().gen_range(0..2),
                 num1: rand::thread_rng().gen_range(range[0]..range[1]),
                 num2: rand::thread_rng().gen_range(range[0]..range[1]),
@@ -105,6 +113,8 @@ impl Formula {
 }
 
 pub mod utils {
+    use super::User;
+
     pub fn read_number(low: u32, high: u32) -> u32 {
         loop {
             let num: u32 = if let Ok(value) = read_input().parse() {
@@ -133,6 +143,12 @@ pub mod utils {
     pub fn get_time(time: u32) -> (u32, u32) {
         (time / 60, time % 60)
     }
+
+    pub fn print_profile(user: User) {
+        for line in user.profile.lines() {
+            println!("{}", line);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -152,12 +168,19 @@ mod test {
     }
 
     #[test]
+    #[should_panic(expected = "Choose to exit")]
     fn open_file() {
-        fs::File::open("./logs/test").unwrap_or_else(|error| -> fs::File {
+        fs::File::open("./logs/no_file").unwrap_or_else(|error| -> fs::File {
             if error.kind() == ErrorKind::NotFound {
-                fs::File::create("./logs/test").unwrap_or_else(|error| {
-                    panic!("Problem creating the file: {:?}", error);
-                })
+                println!("用户未找到\n是否新建? (y/n)");
+                if utils::read_input() == String::from("y") {
+                    fs::File::create("./logs/no_file").unwrap_or_else(|error| {
+                        panic!("Problem creating the file: {:?}", error);
+                    })
+                } else {
+                    println!("process exit");
+                    panic!("Choose to exit");
+                }
             } else {
                 panic!("Problem opening the file: {:?}", error);
             }

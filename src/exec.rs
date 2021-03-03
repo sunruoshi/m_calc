@@ -43,7 +43,7 @@ pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
             log.push_str(&format!("{}\n", formula.get_formula()));
             println!("{}", formula.get_formula());
         });
-        println!("是否订正? (确定请输入y)");
+        println!("是否订正? (y/n)");
         if utils::read_input() == String::from("y") {
             while failed_list.len() > 0 {
                 if let Some(formula) = failed_list.pop_front() {

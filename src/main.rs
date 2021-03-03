@@ -1,7 +1,7 @@
 mod exec;
 mod lib;
 
-use lib::{Formula, User};
+use lib::{utils, Formula, User};
 use std::{env, process};
 
 fn main() {
@@ -13,10 +13,19 @@ fn main() {
         println!("Problem parsing argument: {}", err);
         process::exit(1);
     });
-    println!("欢迎, {}", user.username);
+    println!("欢迎, {}\n请选择:\n1->开始做题 2->查看记录", user.username);
 
-    if let Err(e) = exec::run(&Formula::new_list(), user) {
-        println!("Application error: {}", e);
+    let choose: String = utils::read_input();
+
+    if choose == String::from("1") {
+        if let Err(e) = exec::run(&Formula::new_list(), user) {
+            println!("Application error: {}", e);
+            process::exit(1);
+        }
+    } else if choose == String::from("2") {
+        utils::print_profile(user);
+    } else {
+        println!("再见!");
         process::exit(1);
     }
 }
