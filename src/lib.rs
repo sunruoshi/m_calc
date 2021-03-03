@@ -13,10 +13,9 @@ impl User {
             return Err("not enough arguments");
         }
         let username = args[1].clone();
-        let path = format!("./logs/{}", &username);
-        let mut file = fs::File::open(&path).unwrap_or_else(|error| {
+        let mut file = fs::File::open(&(format!("./logs/{}", &username))).unwrap_or_else(|error| {
             if error.kind() == ErrorKind::NotFound {
-                fs::File::create(&path).unwrap_or_else(|error| {
+                fs::File::create(&(format!("./logs/{}", &username))).unwrap_or_else(|error| {
                     println!("Problem creating the file: {:?}", error);
                     process::exit(1);
                 })
@@ -71,47 +70,48 @@ impl Formula {
         formula_list
     }
     fn validate(&mut self) {
-        if self.operator == 1 && self.num1 < self.num2 {
-            self.num1 ^= self.num2;
-            self.num2 ^= self.num1;
-            self.num1 ^= self.num2;
+        if !(self.operator == 1 && self.num1 < self.num2) {
+            return;
         }
+        self.num1 ^= self.num2;
+        self.num2 ^= self.num1;
+        self.num1 ^= self.num2;
     }
     fn list_args() -> (u32, [u32; 2]) {
         println!("请输入题目数量:");
-        let num_total: u32 = utils::read_number(10, 100);
-        let num_range = loop {
-            println!("请输入数字范围:");
+        (
+            utils::read_number(10, 100),
+            loop {
+                println!("请输入数字范围:");
 
-            let mut range = [utils::read_number(1, 100), utils::read_number(1, 100)];
+                let mut range = [utils::read_number(1, 100), utils::read_number(1, 100)];
 
-            if range[0] > range[1] {
-                range.swap(0, 1);
-            } else if range[0] == range[1] {
-                println!("请输入不同的数字!");
-                continue;
-            }
-            break range;
-        };
-        (num_total, num_range)
+                if range[0] > range[1] {
+                    range.swap(0, 1);
+                } else if range[0] == range[1] {
+                    println!("请输入不同的数字!");
+                    continue;
+                }
+                break range;
+            },
+        )
     }
 }
 
 pub mod utils {
     pub fn read_number(low: u32, high: u32) -> u32 {
         loop {
-            let num: u32 = match read_input().parse() {
-                Ok(value) => value,
-                Err(_) => {
-                    println!("请输入数字!");
-                    continue;
-                }
+            let num: u32 = if let Ok(value) = read_input().parse() {
+                value
+            } else {
+                println!("请输入数字!");
+                continue;
             };
-            if num < low || num > high {
+            if !(num < low || num > high) {
+                return num;
+            } else {
                 println!("输入范围内的数字:{} - {}", low, high);
                 continue;
-            } else {
-                return num;
             }
         }
     }
@@ -147,7 +147,7 @@ mod test {
 
     #[test]
     fn open_file() {
-        fs::File::open("./logs/test").unwrap_or_else(|error| {
+        fs::File::open("./logs/test").unwrap_or_else(|error| -> fs::File {
             if error.kind() == ErrorKind::NotFound {
                 fs::File::create("./logs/test").unwrap_or_else(|error| {
                     panic!("Problem creating the file: {:?}", error);

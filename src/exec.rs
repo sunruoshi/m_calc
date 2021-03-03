@@ -10,14 +10,14 @@ pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
     let mut failed_list = VecDeque::new();
     let mut log = String::new();
 
-    for formula in list {
+    list.into_iter().for_each(|formula| {
         println!("{}", formula.get_formula());
-        if utils::read_number(u32::MIN, u32::MAX) == formula.get_answer() {
-            score += 1;
-        } else {
+        if utils::read_number(u32::MIN, u32::MAX) != formula.get_answer() {
             failed_list.push_back(formula);
+        } else {
+            score += 1;
         }
-    }
+    });
 
     match time_start.elapsed() {
         Ok(elapsed) => {
@@ -39,10 +39,10 @@ pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
     if score != total {
         log.push_str(&format!("错题: {}\n", failed_list.len()));
         println!("错题: {}", failed_list.len());
-        for formula in &failed_list {
+        failed_list.iter().for_each(|formula| {
             log.push_str(&format!("{}\n", formula.get_formula()));
             println!("{}", formula.get_formula());
-        }
+        });
         println!("是否订正? (确定请输入y)");
         if utils::read_input() == String::from("y") {
             while failed_list.len() > 0 {
@@ -56,15 +56,12 @@ pub fn run(list: &VecDeque<Formula>, user: User) -> Result<(), Box<dyn Error>> {
                     }
                 }
             }
-            println!("订正完成, 太棒了!\n{}", now);
-        } else {
-            println!("{}", now);
+            println!("订正完成, 太棒了!");
         }
+        println!("{}", now);
     }
 
-    let path = format!("./logs/{}", &user.username);
-
-    fs::write(&path, user.profile + &log)?;
+    fs::write(&(format!("./logs/{}", &user.username)), user.profile + &log)?;
 
     Ok(())
 }
