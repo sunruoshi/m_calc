@@ -15,9 +15,7 @@ fn main() {
     });
     println!("欢迎, {}", user.username);
 
-    let list = Formula::new_list();
-
-    if let Err(e) = exec::run(&list, user) {
+    if let Err(e) = exec::run(&Formula::new_list(), user) {
         println!("Application error: {}", e);
         process::exit(1);
     }
