@@ -1,5 +1,6 @@
 use crate::lib::{utils, Formula, User};
 use chrono::{DateTime, Local};
+use console::style;
 use std::{collections::VecDeque, convert::TryInto, error::Error, fs, time::SystemTime};
 
 pub fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> {
@@ -11,7 +12,7 @@ pub fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Erro
     let mut log: String = String::new();
 
     list.into_iter().for_each(|formula| {
-        println!("{}", formula.get_formula());
+        println!("{}", style(formula.get_formula()).white());
         if utils::read_number(u32::MIN, u32::MAX) != formula.get_answer() {
             failed_list.push_back(formula);
         } else {
@@ -29,36 +30,40 @@ pub fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Erro
                 time.0,
                 time.1
             );
-            println!("{}", &log);
+            println!("{}", style(&log).yellow());
         }
         Err(e) => {
-            println!("Error: {:?}", e);
+            println!("Error: {:?}", style(e).red());
         }
     }
 
     if score != total {
         log.push_str(&format!("错题: {}\n", failed_list.len()));
-        println!("错题: {}", failed_list.len());
+        println!(
+            "{} {}",
+            style("错题:").red(),
+            style(failed_list.len()).yellow()
+        );
         failed_list.iter().for_each(|formula| {
             log.push_str(&format!("{}\n", formula.get_formula()));
-            println!("{}", formula.get_formula());
+            println!("{}", style(formula.get_formula()).white());
         });
-        println!("是否订正? (y/n)");
+        println!("{}", style("是否订正? (y/n)").blue());
         if utils::read_input() == String::from("y") {
             while failed_list.len() > 0 {
                 if let Some(formula) = failed_list.pop_front() {
-                    println!("{}", formula.get_formula());
+                    println!("{}", style(formula.get_formula()).white());
                     if utils::read_number(u32::MIN, u32::MAX) == formula.get_answer() {
-                        println!("回答正确!");
+                        println!("{}", style("回答正确!").blue());
                     } else {
                         failed_list.push_front(formula);
-                        println!("回答错误!");
+                        println!("{}", style("回答错误!").red());
                     }
                 }
             }
-            println!("订正完成, 太棒了!");
+            println!("{}", style("\n订正完成, 太棒了!\n").blue());
         }
-        println!("{}", now);
+        println!("{}", style(now).red().underlined());
     }
 
     user.profile = String::from(&user.profile) + &log;

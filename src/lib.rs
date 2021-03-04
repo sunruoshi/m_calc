@@ -1,11 +1,13 @@
+use console::style;
+use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
 use rand::Rng;
 use std::{
     collections::VecDeque,
+    convert::TryInto,
     fs,
     io::{ErrorKind, Read},
     process,
 };
-
 pub struct User {
     pub username: String,
     pub profile: String,
@@ -20,20 +22,20 @@ impl User {
         let mut file = fs::File::open(&(format!("./logs/{}", &username))).unwrap_or_else(
             |error| -> fs::File {
                 if error.kind() == ErrorKind::NotFound {
-                    println!("用户未找到\n是否新建? (y/n)");
+                    println!("{}", style("记录未找到\n是否新建? (y/n)").blue());
                     if utils::read_input() == String::from("y") {
                         fs::File::create(&(format!("./logs/{}", &username))).unwrap_or_else(
                             |error| {
-                                println!("Problem creating the file: {:?}", error);
+                                println!("Problem creating the file: {:?}", style(error).red());
                                 process::exit(1);
                             },
                         )
                     } else {
-                        println!("process exit");
+                        println!("{}", style("process exit").red());
                         process::exit(1);
                     }
                 } else {
-                    println!("Problem opening the file: {:?}", error);
+                    println!("Problem opening the file: {:?}", style(error).red());
                     process::exit(1);
                 }
             },
@@ -71,7 +73,12 @@ impl Formula {
     pub fn new_list() -> VecDeque<Formula> {
         let mut formula_list: VecDeque<Formula> = VecDeque::new();
         let (count, range) = Formula::list_args();
-        for i in 0..count {
+        let bar: ProgressBar = ProgressBar::new(count.try_into().unwrap()).with_style(
+            ProgressStyle::default_bar()
+                .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+                .progress_chars("##-"),
+        );
+        for i in (0..count).progress_with(bar) {
             let mut formula = Formula {
                 index: i + 1,
                 operator: rand::thread_rng().gen_range(0..2),
@@ -92,18 +99,18 @@ impl Formula {
         self.num1 ^= self.num2;
     }
     fn list_args() -> (u32, [u32; 2]) {
-        println!("请输入题目数量:");
+        println!("{}", style("请输入题目数量:").cyan().bold());
         (
             utils::read_number(10, 100),
             loop {
-                println!("请输入数字范围:");
+                println!("{}", style("请输入数字范围:").cyan().bold());
 
                 let mut range = [utils::read_number(1, 100), utils::read_number(1, 100)];
 
                 if range[0] > range[1] {
                     range.swap(0, 1);
                 } else if range[0] == range[1] {
-                    println!("请输入不同的数字!");
+                    println!("{}", style("请输入不同的数字!").red());
                     continue;
                 }
                 break range;
@@ -113,6 +120,8 @@ impl Formula {
 }
 
 pub mod utils {
+    use console::style;
+
     use super::User;
 
     pub fn read_number(low: u32, high: u32) -> u32 {
@@ -120,13 +129,17 @@ pub mod utils {
             let num: u32 = if let Ok(value) = read_input().parse() {
                 value
             } else {
-                println!("请输入数字!");
+                println!("{}", style("请输入数字!").red());
                 continue;
             };
             if !(num < low || num > high) {
                 return num;
             } else {
-                println!("输入范围内的数字:{} - {}", low, high);
+                println!(
+                    "输入范围内的数字:{} - {}",
+                    style(low).red(),
+                    style(high).red()
+                );
                 continue;
             }
         }
@@ -151,11 +164,11 @@ pub mod utils {
                 if line.contains("你的得分") {
                     count += 1;
                 }
-                println!("{}", line);
+                println!("{}", style(line).white());
             });
-            println!("\n共找到{}条记录", count);
+            println!("\n共找到{}条记录", style(&count).red());
         } else {
-            println!("无记录!")
+            println!("{}", style("无记录!").red());
         }
     }
 }
