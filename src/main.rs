@@ -9,15 +9,13 @@ use std::{env, process};
 fn main() {
     println!("{}", style("\n我的口算 v0.1.0\n").cyan().bold());
 
-    let args: Vec<String> = env::args().collect();
-
-    let mut user: User = User::new(&args).unwrap_or_else(|err| {
+    let mut user: User = User::new(env::args()).unwrap_or_else(|err| {
         println!("Problem parsing argument: {}", style(err).red());
         process::exit(1);
     });
 
     println!(
-        "{} {}",
+        "{} {}\n",
         style("欢迎,").cyan().bold(),
         style(&user.username).yellow().underlined()
     );
@@ -28,10 +26,9 @@ fn main() {
 }
 
 fn select_menu(user: &mut User) -> std::io::Result<()> {
-    println!("{}", style("\n请选择:").cyan().bold());
-
     let items = vec!["开始做题", "查看记录", "退出程序"];
     let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("请选择:")
         .items(&items)
         .default(0)
         .interact_opt()?;
@@ -47,13 +44,16 @@ fn select_menu(user: &mut User) -> std::io::Result<()> {
             utils::print_profile(user);
         }
         Some(2) => {
-            println!("{}", style("再见!").red());
+            println!("{}", style("session end").red(),);
             process::exit(1);
         }
         Some(_) => {
             println!("{}", style("请输入正确的选项!").red());
         }
-        None => println!("{}", style("用户已退出").red()),
+        None => {
+            println!("{}", style("session end").red());
+            process::exit(1);
+        }
     }
 
     Ok(())

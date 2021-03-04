@@ -63,7 +63,7 @@ pub fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Erro
             }
             println!("{}", style("\n订正完成, 太棒了!\n").blue());
         }
-        println!("{}", style(now).red().underlined());
+        println!("{}\n", style(now).red().underlined());
     }
 
     user.profile = String::from(&user.profile) + &log;

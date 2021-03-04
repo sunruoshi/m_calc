@@ -4,7 +4,7 @@ use rand::Rng;
 use std::{
     collections::VecDeque,
     convert::TryInto,
-    fs,
+    env, fs,
     io::{ErrorKind, Read},
     process, thread, time,
 };
@@ -14,11 +14,12 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(args: &[String]) -> Result<User, &str> {
-        if args.len() < 2 {
-            return Err("not enough arguments");
-        }
-        let username = args[1].clone();
+    pub fn new(mut args: env::Args) -> Result<User, &'static str> {
+        args.next();
+        let username: String = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Please pass a username"),
+        };
         let mut file = fs::File::open(&(format!("./logs/{}", &username))).unwrap_or_else(
             |error| -> fs::File {
                 if error.kind() == ErrorKind::NotFound {
@@ -31,7 +32,7 @@ impl User {
                             },
                         )
                     } else {
-                        println!("{}", style("process exit").red());
+                        println!("{}", style("session abort").red());
                         process::exit(1);
                     }
                 } else {
@@ -73,22 +74,25 @@ impl Formula {
     pub fn new_list() -> VecDeque<Formula> {
         let mut formula_list: VecDeque<Formula> = VecDeque::new();
         let (count, range) = Formula::list_args();
-        let bar: ProgressBar = ProgressBar::new(count.try_into().unwrap()).with_style(
-            ProgressStyle::default_bar()
-                .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-                .progress_chars("##-"),
-        );
-        for i in (0..count).progress_with(bar) {
-            let mut formula = Formula {
-                index: i + 1,
-                operator: rand::thread_rng().gen_range(0..2),
-                num1: rand::thread_rng().gen_range(range[0]..range[1]),
-                num2: rand::thread_rng().gen_range(range[0]..range[1]),
-            };
-            formula.validate();
-            formula_list.push_back(formula);
-            thread::sleep(time::Duration::from_millis(10));
-        }
+        (0..count)
+            .progress_with(
+                ProgressBar::new(count.try_into().unwrap()).with_style(
+                    ProgressStyle::default_bar()
+                        .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+                        .progress_chars("##-"),
+                ),
+            )
+            .for_each(|i| {
+                let mut formula = Formula {
+                    index: i + 1,
+                    operator: rand::thread_rng().gen_range(0..2),
+                    num1: rand::thread_rng().gen_range(range[0]..range[1]),
+                    num2: rand::thread_rng().gen_range(range[0]..range[1]),
+                };
+                formula.validate();
+                formula_list.push_back(formula);
+                thread::sleep(time::Duration::from_millis(10));
+            });
         formula_list
     }
     fn validate(&mut self) {
@@ -162,7 +166,7 @@ pub mod utils {
                 }
                 println!("{}", style(line).white());
             });
-            println!("\n共找到{}条记录", style(&count).red());
+            println!("\n共找到{}条记录\n", style(&count).red());
         } else {
             println!("{}", style("无记录!").red());
         }
@@ -183,25 +187,5 @@ mod test {
         };
         formula.validate();
         assert_eq!(formula.num1, 1);
-    }
-
-    #[test]
-    #[should_panic(expected = "Choose to exit")]
-    fn open_file() {
-        fs::File::open("./logs/no_file").unwrap_or_else(|error| -> fs::File {
-            if error.kind() == ErrorKind::NotFound {
-                println!("用户未找到\n是否新建? (y/n)");
-                if utils::read_input() == String::from("y") {
-                    fs::File::create("./logs/no_file").unwrap_or_else(|error| {
-                        panic!("Problem creating the file: {:?}", error);
-                    })
-                } else {
-                    println!("process exit");
-                    panic!("Choose to exit");
-                }
-            } else {
-                panic!("Problem opening the file: {:?}", error);
-            }
-        });
     }
 }
