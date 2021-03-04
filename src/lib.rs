@@ -6,7 +6,7 @@ use std::{
     convert::TryInto,
     fs,
     io::{ErrorKind, Read},
-    process,
+    process, thread, time,
 };
 pub struct User {
     pub username: String,
@@ -87,6 +87,7 @@ impl Formula {
             };
             formula.validate();
             formula_list.push_back(formula);
+            thread::sleep(time::Duration::from_millis(10));
         }
         formula_list
     }
@@ -120,9 +121,8 @@ impl Formula {
 }
 
 pub mod utils {
-    use console::style;
-
     use super::User;
+    use console::style;
 
     pub fn read_number(low: u32, high: u32) -> u32 {
         loop {
@@ -151,10 +151,6 @@ pub mod utils {
             .read_line(&mut input)
             .expect("Some error occurred");
         input.trim().to_string()
-    }
-
-    pub fn get_time(time: u32) -> (u32, u32) {
-        (time / 60, time % 60)
     }
 
     pub fn print_profile(user: &User) {

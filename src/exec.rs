@@ -22,13 +22,13 @@ pub fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Erro
 
     match time_start.elapsed() {
         Ok(elapsed) => {
-            let time: (u32, u32) = utils::get_time(elapsed.as_secs().try_into().unwrap());
+            let time: u32 = elapsed.as_secs().try_into().unwrap();
             log = format!(
                 "\n{}\n你的得分: {}分\n你的用时: {}分{}秒\n",
                 now,
                 score * 100 / total,
-                time.0,
-                time.1
+                time / 60,
+                time % 60,
             );
             println!("{}", style(&log).yellow());
         }
