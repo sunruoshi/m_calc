@@ -78,8 +78,10 @@ impl Formula {
             .progress_with(
                 ProgressBar::new(count.try_into().unwrap()).with_style(
                     ProgressStyle::default_bar()
-                        .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-                        .progress_chars("##-"),
+                        .template(
+                            "[{bytes_per_sec:.yellow}][{bar:40.blue/red}][{percent:.yellow}%]",
+                        )
+                        .progress_chars("##>"),
                 ),
             )
             .for_each(|i| {
@@ -114,8 +116,9 @@ impl Formula {
 
                 if range[0] > range[1] {
                     range.swap(0, 1);
-                } else if range[0] == range[1] {
-                    println!("{}", style("请输入不同的数字!").red());
+                }
+                if range[1] - range[0] < 10 {
+                    println!("{}", style("数字范围至少为10").red());
                     continue;
                 }
                 break range;
@@ -168,7 +171,7 @@ pub mod utils {
             });
             println!("\n共找到{}条记录\n", style(&count).red());
         } else {
-            println!("{}", style("无记录!").red());
+            println!("{}", style("\n无记录!\n").red());
         }
     }
 }
