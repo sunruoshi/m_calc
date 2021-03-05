@@ -1,6 +1,5 @@
 use chrono::{DateTime, Local};
 use console::style;
-use core::panic;
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
 use rand::Rng;
@@ -25,17 +24,15 @@ impl User {
             Some(arg) => arg,
             None => return Err("Please pass a username"),
         };
-        let mut file = fs::File::open(&(format!("{}", &username))).unwrap_or_else(
-            |error| -> fs::File {
+        let mut file =
+            fs::File::open(&(format!("{}", &username))).unwrap_or_else(|error| -> fs::File {
                 if error.kind() == ErrorKind::NotFound {
                     println!("{}", style("\n记录未找到\n是否新建? (y/n)").blue());
                     if utils::read_input() == String::from("y") {
-                        fs::File::create(&(format!("{}", &username))).unwrap_or_else(
-                            |error| {
-                                println!("Problem creating the file: {:?}", style(error).red());
-                                process::exit(1);
-                            },
-                        )
+                        fs::File::create(&(format!("{}", &username))).unwrap_or_else(|error| {
+                            println!("Problem creating the file: {:?}", style(error).red());
+                            process::exit(1);
+                        })
                     } else {
                         println!("{}", style("session abort").red());
                         process::exit(1);
@@ -44,8 +41,7 @@ impl User {
                     println!("Problem opening the file: {:?}", style(error).red());
                     process::exit(1);
                 }
-            },
-        );
+            });
         let mut profile: String = String::new();
 
         file.read_to_string(&mut profile).unwrap_or_else(|_| 0);
