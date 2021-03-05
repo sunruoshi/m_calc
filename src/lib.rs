@@ -10,8 +10,7 @@ use std::{
     error::Error,
     fs,
     io::{ErrorKind, Read},
-    process, thread,
-    time::{self, SystemTime},
+    process, thread, time,
 };
 pub struct User {
     pub username: String,
@@ -54,35 +53,39 @@ impl User {
     }
 }
 
-pub struct Formula {
-    pub index: u32,
-    pub pattern: u32,
-    pub num1: u32,
-    pub num2: u32,
+struct Formula {
+    index: i32,
+    pattern: i32,
+    num1: i32,
+    num2: i32,
 }
 
 impl Formula {
-    pub fn get_answer(&self) -> u32 {
-        return if self.pattern == 0 || self.pattern == 3 {
+    fn get_answer(&self) -> i32 {
+        return if self.pattern == 0 || self.pattern == 1 {
             self.num1 + self.num2
         } else {
-            self.num1 - self.num2
+            (self.num1 - self.num2).abs()
         };
     }
 
-    pub fn get_formula(&self) -> String {
+    fn get_formula(&self) -> String {
         return if self.pattern == 0 {
             format!("({}) {} + {} = ( ) ", self.index, self.num1, self.num2)
         } else if self.pattern == 1 {
-            format!("({}) {} - {} = ( ) ", self.index, self.num1, self.num2)
+            format!("({}) ( ) - {} = {} ", self.index, self.num1, self.num2)
         } else if self.pattern == 2 {
             format!("({}) {} - ( ) = {} ", self.index, self.num1, self.num2)
+        } else if self.pattern == 3 {
+            format!("({}) {} - {} = ( ) ", self.index, self.num1, self.num2)
+        } else if self.pattern == 4 {
+            format!("({}) ( ) + {} = {} ", self.index, self.num1, self.num2)
         } else {
-            format!("({}) ( ) - {} = {} ", self.index, self.num1, self.num2)
+            format!("({}) {} + ( ) = {} ", self.index, self.num1, self.num2)
         };
     }
 
-    pub fn new_list() -> VecDeque<Formula> {
+    fn new_list() -> VecDeque<Formula> {
         let lv = select_level().unwrap();
         let (count, range) = {
             println!("{}", style("请输入题目数量:").cyan().bold());
@@ -118,7 +121,7 @@ impl Formula {
                 ),
             )
             .for_each(|i| {
-                let mut formula = Formula {
+                let mut formula: Formula = Formula {
                     index: i + 1,
                     pattern: rand::thread_rng().gen_range(0..lv),
                     num1: rand::thread_rng().gen_range(range[0]..range[1]),
@@ -132,12 +135,21 @@ impl Formula {
     }
 
     fn validate(&mut self) {
-        if !((self.pattern == 1 || self.pattern == 2) && self.num1 < self.num2) {
+        if self.pattern == 0 || self.pattern == 1 {
             return;
+        } else if self.pattern == 2 || self.pattern == 3 {
+            if self.num1 < self.num2 {
+                self.num1 ^= self.num2;
+                self.num2 ^= self.num1;
+                self.num1 ^= self.num2;
+            }
+        } else {
+            if self.num1 > self.num2 {
+                self.num1 ^= self.num2;
+                self.num2 ^= self.num1;
+                self.num1 ^= self.num2;
+            }
         }
-        self.num1 ^= self.num2;
-        self.num2 ^= self.num1;
-        self.num1 ^= self.num2;
     }
 }
 
@@ -172,9 +184,9 @@ pub fn select_menu(user: &mut User) -> std::io::Result<()> {
     Ok(())
 }
 
-fn select_level() -> std::io::Result<u32> {
-    let lv: u32;
-    let items = vec!["难度1", "难度2"];
+fn select_level() -> std::io::Result<i32> {
+    let lv: i32;
+    let items = vec!["难度1 (Easy)", "难度2 (Medium)"];
     let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("请选择难度:")
         .items(&items)
@@ -186,7 +198,7 @@ fn select_level() -> std::io::Result<u32> {
             lv = 2;
         }
         Some(_) => {
-            lv = 4;
+            lv = 6;
         }
         None => {
             println!("{}", style("session end").red());
@@ -199,7 +211,7 @@ fn select_level() -> std::io::Result<u32> {
 
 fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> {
     let now: DateTime<Local> = Local::now();
-    let time_start: SystemTime = SystemTime::now();
+    let time_start: time::SystemTime = time::SystemTime::now();
     let total: u32 = list.len().try_into().unwrap();
     let mut score: u32 = 0;
     let mut failed_list: VecDeque<&Formula> = VecDeque::new();
@@ -207,7 +219,7 @@ fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> 
 
     list.into_iter().for_each(|formula| {
         println!("{}", style(formula.get_formula()).white());
-        if utils::read_number(u32::MIN, u32::MAX) != formula.get_answer() {
+        if utils::read_number(i32::MIN, i32::MAX) != formula.get_answer() {
             failed_list.push_back(formula);
         } else {
             score += 1;
@@ -248,7 +260,7 @@ fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> 
             while failed_list.len() > 0 {
                 if let Some(formula) = failed_list.pop_front() {
                     println!("{}", style(formula.get_formula()).white());
-                    if utils::read_number(u32::MIN, u32::MAX) == formula.get_answer() {
+                    if utils::read_number(i32::MIN, i32::MAX) == formula.get_answer() {
                         println!("{}", style("回答正确!").blue());
                     } else {
                         failed_list.push_front(formula);
@@ -269,12 +281,11 @@ fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> 
 }
 
 pub mod utils {
-    use super::User;
-    use console::style;
+    use super::*;
 
-    pub fn read_number(low: u32, high: u32) -> u32 {
+    pub fn read_number(low: i32, high: i32) -> i32 {
         loop {
-            let num: u32 = if let Ok(value) = read_input().parse() {
+            let num: i32 = if let Ok(value) = read_input().parse() {
                 value
             } else {
                 println!("{}", style("请输入数字!").red());
