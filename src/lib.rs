@@ -87,6 +87,17 @@ impl Formula {
         }
     }
 
+    fn validate(&mut self) {
+        match Some(self.pattern) {
+            Some(1) if self.num1 < self.num2 => self.swap_num(),
+            Some(2) if self.num1 < self.num2 => self.swap_num(),
+            Some(4) if self.num1 > self.num2 => self.swap_num(),
+            Some(5) if self.num1 > self.num2 => self.swap_num(),
+            Some(_) => (),
+            None => panic!("formula pattern error"),
+        }
+    }
+
     fn new_list(user: &mut User) -> VecDeque<Formula> {
         let lv: i32 = select_level().unwrap();
         let preset: [i32; 3] = select_preset().unwrap();
@@ -126,22 +137,10 @@ impl Formula {
         formula_list
     }
 
-    fn validate(&mut self) {
-        if self.pattern == 0 || self.pattern == 3 {
-            return;
-        } else if self.pattern == 1 || self.pattern == 2 {
-            if self.num1 < self.num2 {
-                self.num1 ^= self.num2;
-                self.num2 ^= self.num1;
-                self.num1 ^= self.num2;
-            }
-        } else {
-            if self.num1 > self.num2 {
-                self.num1 ^= self.num2;
-                self.num2 ^= self.num1;
-                self.num1 ^= self.num2;
-            }
-        }
+    fn swap_num(&mut self) {
+        self.num1 ^= self.num2;
+        self.num2 ^= self.num1;
+        self.num1 ^= self.num2;
     }
 }
 
