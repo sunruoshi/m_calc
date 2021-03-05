@@ -25,12 +25,12 @@ impl User {
             Some(arg) => arg,
             None => return Err("Please pass a username"),
         };
-        let mut file = fs::File::open(&(format!("./logs/{}", &username))).unwrap_or_else(
+        let mut file = fs::File::open(&(format!("{}", &username))).unwrap_or_else(
             |error| -> fs::File {
                 if error.kind() == ErrorKind::NotFound {
                     println!("{}", style("\n记录未找到\n是否新建? (y/n)").blue());
                     if utils::read_input() == String::from("y") {
-                        fs::File::create(&(format!("./logs/{}", &username))).unwrap_or_else(
+                        fs::File::create(&(format!("{}", &username))).unwrap_or_else(
                             |error| {
                                 println!("Problem creating the file: {:?}", style(error).red());
                                 process::exit(1);
@@ -291,7 +291,7 @@ fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> 
 
     user.add_log(log);
 
-    fs::write(&(format!("./logs/{}", &user.username)), &user.profile)?;
+    fs::write(&(format!("{}", &user.username)), &user.profile)?;
 
     Ok(())
 }
