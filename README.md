@@ -2,6 +2,8 @@
 
 ### A shell tool for my boy in first grade to practice calculation :)
 
+![video](https://user-images.githubusercontent.com/15625347/110196762-a93a8e00-7e81-11eb-8de2-69cce24b95fc.gif)
+
 ## Build and Run
 
 1. Clone to local and ```cargo build --release```
