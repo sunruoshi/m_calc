@@ -49,95 +49,102 @@ impl User {
         Ok(User { username, profile })
     }
 
+    fn print_profile(&self) {
+        if self.profile.len() != 0 {
+            let mut count = 0;
+            self.profile.lines().for_each(|line| {
+                if line.contains("你的得分") {
+                    count += 1;
+                }
+                println!("{}", style(line).white());
+            });
+            println!("\n共找到{}条记录\n", style(&count).red());
+        } else {
+            println!("{}", style("\n无记录!\n").red());
+        }
+    }
+
     fn add_log(&mut self, log: String) {
         self.profile = String::from(&self.profile) + &log;
     }
 }
 
 struct Formula {
-    index: i32,
-    pattern: i32,
-    num1: i32,
-    num2: i32,
+    pattern: String,
+    answer: i32,
 }
 
-impl Formula {
-    fn get_answer(&self) -> i32 {
-        match Some(self.pattern) {
-            Some(0) => self.num1 + self.num2,
-            Some(3) => self.num1 + self.num2,
-            Some(_) => (self.num1 - self.num2).abs(),
-            None => panic!("formula pattern error"),
-        }
+fn parse(args: [i32; 4]) -> Result<Formula, &'static str> {
+    let index: i32 = args[0];
+    let mut nums: [i32; 2] = [args[2], args[3]];
+
+    match Some(args[1]) {
+        Some(1) if nums[0] < nums[1] => nums.swap(0, 1),
+        Some(2) if nums[0] < nums[1] => nums.swap(0, 1),
+        Some(4) if nums[0] > nums[1] => nums.swap(0, 1),
+        Some(5) if nums[0] > nums[1] => nums.swap(0, 1),
+        Some(_) => (),
+        None => return Err("Failed to parse nums"),
     }
 
-    fn get_formula(&self) -> String {
-        match Some(self.pattern) {
-            Some(0) => format!("({}) {} + {} = ( ) ", self.index, self.num1, self.num2),
-            Some(1) => format!("({}) {} - {} = ( ) ", self.index, self.num1, self.num2),
-            Some(2) => format!("({}) {} - ( ) = {} ", self.index, self.num1, self.num2),
-            Some(3) => format!("({}) ( ) - {} = {} ", self.index, self.num1, self.num2),
-            Some(4) => format!("({}) ( ) + {} = {} ", self.index, self.num1, self.num2),
-            Some(_) => format!("({}) {} + ( ) = {} ", self.index, self.num1, self.num2),
-            None => panic!("formula pattern error"),
-        }
-    }
+    let pattern = match Some(args[1]) {
+        Some(0) => format!("({}) {} + {} = ( )", index, nums[0], nums[1]),
+        Some(1) => format!("({}) {} - {} = ( )", index, nums[0], nums[1]),
+        Some(2) => format!("({}) {} - ( ) = {}", index, nums[0], nums[1]),
+        Some(3) => format!("({}) ( ) - {} = {}", index, nums[0], nums[1]),
+        Some(4) => format!("({}) ( ) + {} = {}", index, nums[0], nums[1]),
+        Some(_) => format!("({}) {} + ( ) = {}", index, nums[0], nums[1]),
+        None => return Err("Failed to parse pattern"),
+    };
 
-    fn validate(&mut self) {
-        match Some(self.pattern) {
-            Some(1) if self.num1 < self.num2 => self.swap_num(),
-            Some(2) if self.num1 < self.num2 => self.swap_num(),
-            Some(4) if self.num1 > self.num2 => self.swap_num(),
-            Some(5) if self.num1 > self.num2 => self.swap_num(),
-            Some(_) => (),
-            None => panic!("formula pattern error"),
-        }
-    }
+    let answer = match Some(args[1]) {
+        Some(0) => nums[0] + nums[1],
+        Some(3) => nums[0] + nums[1],
+        Some(_) => (nums[0] - nums[1]).abs(),
+        None => return Err("Failed to parse answer"),
+    };
 
-    fn new_list(user: &mut User) -> VecDeque<Formula> {
-        let lv: i32 = select_level().unwrap();
-        let preset: [i32; 3] = select_preset().unwrap();
+    Ok(Formula { pattern, answer })
+}
 
-        let level: i32 = if lv == 2 { 1 } else { 2 };
-        let mode: String = if preset[0] == 10 {
-            String::from("练习")
-        } else {
-            String::from("测试")
-        };
+fn new_list(user: &mut User) -> VecDeque<Formula> {
+    let lv: i32 = select_level().unwrap();
+    let preset: [i32; 3] = select_preset().unwrap();
 
-        user.add_log(format!("\n[难度{} - {}]", level, mode));
+    let level: i32 = if lv == 2 { 1 } else { 2 };
+    let mode: String = if preset[0] == 10 {
+        String::from("练习")
+    } else {
+        String::from("测试")
+    };
 
-        let mut formula_list: VecDeque<Formula> = VecDeque::new();
+    user.add_log(format!("\n[难度{} - {}]", level, mode));
 
-        (0..preset[0])
-            .progress_with(
-                ProgressBar::new(preset[0].try_into().unwrap()).with_style(
-                    ProgressStyle::default_bar()
-                        .template(
-                            "[{bytes_per_sec:.yellow}][{bar:40.blue/red}][{percent:.yellow}%]",
-                        )
-                        .progress_chars("##>"),
-                ),
-            )
-            .for_each(|i| {
-                let mut formula: Formula = Formula {
-                    index: i + 1,
-                    pattern: rand::thread_rng().gen_range(0..lv),
-                    num1: rand::thread_rng().gen_range(preset[1]..preset[2]),
-                    num2: rand::thread_rng().gen_range(preset[1]..preset[2]),
-                };
-                formula.validate();
-                formula_list.push_back(formula);
-                thread::sleep(time::Duration::from_millis(10));
+    let mut formula_list: VecDeque<Formula> = VecDeque::new();
+
+    (0..preset[0])
+        .progress_with(
+            ProgressBar::new(preset[0].try_into().unwrap()).with_style(
+                ProgressStyle::default_bar()
+                    .template("[{bytes_per_sec:.yellow}][{bar:40.blue/red}][{percent:.yellow}%]")
+                    .progress_chars("##>"),
+            ),
+        )
+        .for_each(|i| {
+            let formula: Formula = parse([
+                i + 1,
+                rand::thread_rng().gen_range(0..lv),
+                rand::thread_rng().gen_range(preset[1]..preset[2]),
+                rand::thread_rng().gen_range(preset[1]..preset[2]),
+            ])
+            .unwrap_or_else(|error| {
+                println!("Error: {:?}", style(error).red());
+                process::exit(1);
             });
-        formula_list
-    }
-
-    fn swap_num(&mut self) {
-        self.num1 ^= self.num2;
-        self.num2 ^= self.num1;
-        self.num1 ^= self.num2;
-    }
+            formula_list.push_back(formula);
+            thread::sleep(time::Duration::from_millis(10));
+        });
+    formula_list
 }
 
 pub fn select_menu(user: &mut User) -> std::io::Result<()> {
@@ -150,13 +157,13 @@ pub fn select_menu(user: &mut User) -> std::io::Result<()> {
 
     match selection {
         Some(0) => {
-            if let Err(e) = run(&Formula::new_list(user), user) {
+            if let Err(e) = run(&new_list(user), user) {
                 println!("Application error: {}", style(e).red());
                 process::exit(1);
             }
         }
         Some(1) => {
-            utils::print_profile(user);
+            user.print_profile();
         }
         Some(_) => {
             println!("{}", style("session end").red(),);
@@ -230,8 +237,8 @@ fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> 
     let mut log: String = String::new();
 
     list.into_iter().for_each(|formula| {
-        println!("{}", style(formula.get_formula()).white());
-        if utils::read_number() != formula.get_answer() {
+        println!("{}", style(&formula.pattern).white());
+        if utils::read_number() != formula.answer {
             failed_list.push_back(formula);
         } else {
             score += 1;
@@ -264,15 +271,15 @@ fn run(list: &VecDeque<Formula>, user: &mut User) -> Result<(), Box<dyn Error>> 
             style(failed_list.len()).yellow()
         );
         failed_list.iter().for_each(|formula| {
-            log.push_str(&format!("{}\n", formula.get_formula()));
-            println!("{}", style(formula.get_formula()).white());
+            log.push_str(&format!("{}\n", formula.pattern));
+            println!("{}", style(&formula.pattern).white());
         });
         println!("{}", style("是否订正? (y/n)").blue());
         if utils::read_input() == String::from("y") {
             while failed_list.len() > 0 {
                 if let Some(formula) = failed_list.pop_front() {
-                    println!("{}", style(formula.get_formula()).white());
-                    if utils::read_number() == formula.get_answer() {
+                    println!("{}", style(&formula.pattern).white());
+                    if utils::read_number() == formula.answer {
                         println!("{}", style("回答正确!").blue());
                     } else {
                         failed_list.push_front(formula);
@@ -312,36 +319,10 @@ mod utils {
             .expect("Some error occurred");
         input.trim().to_string()
     }
-
-    pub fn print_profile(user: &User) {
-        if user.profile.len() != 0 {
-            let mut count = 0;
-            user.profile.lines().for_each(|line| {
-                if line.contains("你的得分") {
-                    count += 1;
-                }
-                println!("{}", style(line).white());
-            });
-            println!("\n共找到{}条记录\n", style(&count).red());
-        } else {
-            println!("{}", style("\n无记录!\n").red());
-        }
-    }
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
     #[test]
-    fn formula_validate() {
-        let mut formula = Formula {
-            index: 1,
-            pattern: 0,
-            num1: 1,
-            num2: 5,
-        };
-        formula.validate();
-        assert_eq!(formula.num1, 1);
-    }
+    fn formula_validate() {}
 }
