@@ -166,7 +166,7 @@ impl User {
         if self.profile.len() != 0 {
             let mut count = 0;
             self.profile.lines().for_each(|line| {
-                if line.contains("你的得分") {
+                if line.contains('[') {
                     count += 1;
                 }
                 println!("{}", style(line).white());
