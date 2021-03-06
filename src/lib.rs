@@ -87,24 +87,23 @@ fn parse(args: [i32; 4]) -> Result<Formula, &'static str> {
         None => return Err("Failed to parse nums"),
     }
 
-    let pattern = match Some(args[1]) {
-        Some(0) => format!("({}) {} + {} = ( )", index, nums[0], nums[1]),
-        Some(1) => format!("({}) {} - {} = ( )", index, nums[0], nums[1]),
-        Some(2) => format!("({}) {} - ( ) = {}", index, nums[0], nums[1]),
-        Some(3) => format!("({}) ( ) - {} = {}", index, nums[0], nums[1]),
-        Some(4) => format!("({}) ( ) + {} = {}", index, nums[0], nums[1]),
-        Some(_) => format!("({}) {} + ( ) = {}", index, nums[0], nums[1]),
-        None => return Err("Failed to parse pattern"),
-    };
-
-    let answer = match Some(args[1]) {
-        Some(0) => nums[0] + nums[1],
-        Some(3) => nums[0] + nums[1],
-        Some(_) => (nums[0] - nums[1]).abs(),
-        None => return Err("Failed to parse answer"),
-    };
-
-    Ok(Formula { pattern, answer })
+    Ok(Formula {
+        pattern: match Some(args[1]) {
+            Some(0) => format!("({}) {} + {} = ( )", index, nums[0], nums[1]),
+            Some(1) => format!("({}) {} - {} = ( )", index, nums[0], nums[1]),
+            Some(2) => format!("({}) {} - ( ) = {}", index, nums[0], nums[1]),
+            Some(3) => format!("({}) ( ) - {} = {}", index, nums[0], nums[1]),
+            Some(4) => format!("({}) ( ) + {} = {}", index, nums[0], nums[1]),
+            Some(_) => format!("({}) {} + ( ) = {}", index, nums[0], nums[1]),
+            None => return Err("Failed to parse pattern"),
+        },
+        answer: match Some(args[1]) {
+            Some(0) => nums[0] + nums[1],
+            Some(3) => nums[0] + nums[1],
+            Some(_) => (nums[0] - nums[1]).abs(),
+            None => return Err("Failed to parse answer"),
+        },
+    })
 }
 
 fn new_list(user: &mut User) -> VecDeque<Formula> {
