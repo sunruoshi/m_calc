@@ -216,6 +216,36 @@ impl Formula {
         })
     }
 
+    fn new_ternary(args: [i32; 5]) -> Result<Formula, &'static str> {
+        let index: i32 = args[0];
+        let mut nums: [i32; 3] = [args[2], args[3], args[4]];
+
+        match Some(args[1]) {
+            Some(1) if nums[0] + nums[1] - nums[2] < 0 => nums.swap(1, 2),
+            Some(2) if nums[0] - nums[1] + nums[2] < 0 => nums.swap(0, 1),
+            Some(_) => (),
+            None => return Err("Failed to parse nums"),
+        }
+
+        let (pattern, answer): (String, i32) = match Some(args[1]) {
+            Some(0) => (
+                format!("({}) {} + {} + {} = ( )", index, nums[0], nums[1], nums[2]),
+                nums[0] + nums[1] + nums[2],
+            ),
+            Some(1) => (
+                format!("({}) {} + {} - {} = ( )", index, nums[0], nums[1], nums[2]),
+                nums[0] + nums[1] - nums[2],
+            ),
+            Some(_) => (
+                format!("({}) {} - {} + {} = ( )", index, nums[0], nums[1], nums[2]),
+                nums[0] - nums[1] + nums[2],
+            ),
+            None => return Err("Failed to parse pattern"),
+        };
+
+        Ok(Formula { pattern, answer })
+    }
+
     fn print_pattern(&self) {
         println!("{}", style(&self.pattern).white());
     }
@@ -223,7 +253,7 @@ impl Formula {
 
 impl FormulaList {
     fn new() -> Result<FormulaList, &'static str> {
-        let lv: i32 = utils::select_level().unwrap();
+        let lv: (i32, i32) = utils::select_level().unwrap();
         let preset: [i32; 3] = utils::select_preset().unwrap();
         let mut list: VecDeque<Formula> = VecDeque::new();
 
@@ -238,12 +268,25 @@ impl FormulaList {
                 ),
             )
             .for_each(|i| {
-                let formula: Formula = Formula::new([
-                    i + 1,
-                    rand::thread_rng().gen_range(0..lv),
-                    rand::thread_rng().gen_range(preset[1]..preset[2]),
-                    rand::thread_rng().gen_range(preset[1]..preset[2]),
-                ])
+                let formula: Formula = match Some(lv.0) {
+                    Some(3) => Formula::new_ternary([
+                        i + 1,
+                        rand::thread_rng().gen_range(0..lv.1),
+                        rand::thread_rng().gen_range(preset[1]..preset[2]),
+                        rand::thread_rng().gen_range(preset[1]..preset[2]),
+                        rand::thread_rng().gen_range(preset[1]..preset[2]),
+                    ]),
+                    Some(_) => Formula::new([
+                        i + 1,
+                        rand::thread_rng().gen_range(0..lv.1),
+                        rand::thread_rng().gen_range(preset[1]..preset[2]),
+                        rand::thread_rng().gen_range(preset[1]..preset[2]),
+                    ]),
+                    None => {
+                        println!("{}", style("Failed to generate new list").red());
+                        process::exit(1);
+                    }
+                }
                 .unwrap_or_else(|error| {
                     println!("Error: {:?}", style(error).red());
                     process::exit(1);
@@ -253,7 +296,7 @@ impl FormulaList {
 
         Ok(FormulaList {
             list,
-            level: if lv == 2 { 1 } else { 2 },
+            level: lv.0,
             mode: if preset[0] == 10 {
                 String::from("练习")
             } else {
@@ -266,50 +309,41 @@ impl FormulaList {
 mod utils {
     use super::*;
 
-    pub fn select_level() -> std::io::Result<i32> {
-        let lv: i32;
+    pub fn select_level() -> std::io::Result<(i32, i32)> {
         let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择难度:")
-            .items(&(vec!["难度1 (Easy)", "难度2 (Medium)"]))
+            .items(&(vec!["难度1 (Easy)", "难度2 (Medium)", "难度3 (Hard)"]))
             .default(0)
             .interact_opt()?;
 
-        match selection {
-            Some(0) => {
-                lv = 2;
-            }
-            Some(_) => {
-                lv = 6;
-            }
+        let lv: (i32, i32) = match selection {
+            Some(0) => (1, 2),
+            Some(1) => (2, 6),
+            Some(_) => (3, 3),
             None => {
-                println!("{}", style("session end").red());
+                println!("{}", style("User canceled").red());
                 process::exit(1);
             }
-        }
+        };
 
         Ok(lv)
     }
 
     pub fn select_preset() -> std::io::Result<[i32; 3]> {
-        let preset: [i32; 3];
         let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择模式:")
             .items(&(vec!["练习", "测试"]))
             .default(0)
             .interact_opt()?;
 
-        match selection {
-            Some(0) => {
-                preset = [10, 1, 20];
-            }
-            Some(_) => {
-                preset = [50, 1, 20];
-            }
+        let preset: [i32; 3] = match selection {
+            Some(0) => [10, 1, 20],
+            Some(_) => [50, 1, 20],
             None => {
-                println!("{}", style("session end").red());
+                println!("{}", style("User canceled").red());
                 process::exit(1);
             }
-        }
+        };
 
         Ok(preset)
     }
@@ -335,6 +369,21 @@ mod utils {
 
 #[cfg(test)]
 mod test {
+    use super::Formula;
+    use rand::Rng;
+
     #[test]
-    fn formula_validate() {}
+    fn test_ternary_formula() {
+        (0..10).for_each(|i| {
+            let formula: Formula = Formula::new_ternary([
+                i + 1,
+                rand::thread_rng().gen_range(0..3),
+                rand::thread_rng().gen_range(1..20),
+                rand::thread_rng().gen_range(1..20),
+                rand::thread_rng().gen_range(1..20),
+            ])
+            .unwrap();
+            println!("{} [{}]", formula.pattern, formula.answer);
+        })
+    }
 }
