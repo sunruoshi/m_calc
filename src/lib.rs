@@ -61,10 +61,9 @@ impl User {
     }
 
     pub fn select(&mut self) -> std::io::Result<()> {
-        let items: Vec<&str> = vec!["开始做题", "查看记录", "退出程序"];
         let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择:")
-            .items(&items)
+            .items(&(vec!["开始做题", "查看记录", "退出程序"]))
             .default(0)
             .interact_opt()?;
 
@@ -163,17 +162,19 @@ impl User {
     }
 
     fn print_profile(&self) {
-        if self.profile.len() != 0 {
-            let mut count = 0;
-            self.profile.lines().for_each(|line| {
-                if line.contains('[') {
-                    count += 1;
-                }
-                println!("{}", style(line).white());
-            });
-            println!("\n共找到{}条记录\n", style(&count).red());
-        } else {
-            println!("{}", style("\n无记录!\n").red());
+        match Some(self.profile.len()) {
+            Some(0) => println!("{}", style("\n无记录!\n").red()),
+            Some(_) => {
+                let mut count: i32 = 0;
+                self.profile.lines().for_each(|line| {
+                    if line.contains('[') {
+                        count += 1;
+                    }
+                    println!("{}", style(line).white());
+                });
+                println!("\n共找到{}条记录\n", style(&count).red());
+            }
+            None => (),
         }
     }
 
@@ -267,10 +268,9 @@ mod utils {
 
     pub fn select_level() -> std::io::Result<i32> {
         let lv: i32;
-        let items: Vec<&str> = vec!["难度1 (Easy)", "难度2 (Medium)"];
         let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择难度:")
-            .items(&items)
+            .items(&(vec!["难度1 (Easy)", "难度2 (Medium)"]))
             .default(0)
             .interact_opt()?;
 
@@ -292,10 +292,9 @@ mod utils {
 
     pub fn select_preset() -> std::io::Result<[i32; 3]> {
         let preset: [i32; 3];
-        let items: Vec<&str> = vec!["练习", "测试"];
         let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择模式:")
-            .items(&items)
+            .items(&(vec!["练习", "测试"]))
             .default(0)
             .interact_opt()?;
 
