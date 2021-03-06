@@ -225,14 +225,6 @@ impl FormulaList {
     fn new() -> Result<FormulaList, &'static str> {
         let lv: i32 = utils::select_level().unwrap();
         let preset: [i32; 3] = utils::select_preset().unwrap();
-
-        let level: i32 = if lv == 2 { 1 } else { 2 };
-        let mode: String = if preset[0] == 10 {
-            String::from("练习")
-        } else {
-            String::from("测试")
-        };
-
         let mut list: VecDeque<Formula> = VecDeque::new();
 
         (0..preset[0])
@@ -259,7 +251,15 @@ impl FormulaList {
                 list.push_back(formula);
             });
 
-        Ok(FormulaList { list, level, mode })
+        Ok(FormulaList {
+            list,
+            level: if lv == 2 { 1 } else { 2 },
+            mode: if preset[0] == 10 {
+                String::from("练习")
+            } else {
+                String::from("测试")
+            },
+        })
     }
 }
 
