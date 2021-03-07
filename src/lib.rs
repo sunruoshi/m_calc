@@ -38,8 +38,8 @@ impl User {
         let mut file =
             fs::File::open(&(format!("{}", &username))).unwrap_or_else(|error| -> fs::File {
                 if error.kind() == ErrorKind::NotFound {
-                    println!("{}", style("\n记录未找到\n是否新建? (y/n)").blue());
-                    if utils::read_input() == String::from("y") {
+                    println!("{}", style("\n记录未找到\n").red());
+                    if utils::select("是否新建").unwrap() {
                         fs::File::create(&(format!("{}", &username))).unwrap_or_else(|error| {
                             println!("Problem creating the file: {:?}", style(error).red());
                             process::exit(1);
@@ -136,8 +136,7 @@ impl User {
                 log.push_str(&format!("{}\n", formula.pattern));
                 formula.print_pattern();
             });
-            println!("{}", style("是否订正? (y/n)").blue());
-            if utils::read_input() == String::from("y") {
+            if utils::select("是否订正").unwrap() {
                 while failed_list.len() > 0 {
                     if let Some(formula) = failed_list.pop_front() {
                         println!("{}", style(&formula.pattern).white());
@@ -325,22 +324,41 @@ mod utils {
         Ok(preset)
     }
 
+    pub fn select(prompt: &str) -> std::io::Result<bool> {
+        let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt(prompt)
+            .items(&(vec!["Yes", "No"]))
+            .default(0)
+            .interact_opt()?;
+
+        let choose: bool = match selection {
+            Some(0) => true,
+            Some(_) => false,
+            None => {
+                println!("{}", style("User canceled").red());
+                process::exit(1);
+            }
+        };
+
+        Ok(choose)
+    }
+
     pub fn read_number() -> i32 {
         loop {
-            if let Ok(value) = read_input().parse() {
+            if let Ok(value) = {
+                let mut input: String = String::new();
+                std::io::stdin()
+                    .read_line(&mut input)
+                    .expect("Some error occurred");
+                input.trim().to_string()
+            }
+            .parse()
+            {
                 break value;
             } else {
                 println!("{}", style("请输入数字!").red());
             };
         }
-    }
-
-    pub fn read_input() -> String {
-        let mut input = String::new();
-        std::io::stdin()
-            .read_line(&mut input)
-            .expect("Some error occurred");
-        input.trim().to_string()
     }
 }
 
