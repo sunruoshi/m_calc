@@ -78,11 +78,11 @@ impl User {
                 self.print_profile();
             }
             Some(_) => {
-                println!("{}", style("session end").red(),);
+                println!("{}", style("User canceled").red(),);
                 process::exit(1);
             }
             None => {
-                println!("{}", style("session end").red());
+                println!("{}", style("User canceled").red());
                 process::exit(1);
             }
         }
@@ -185,65 +185,64 @@ impl User {
 
 impl Formula {
     fn new(args: [i32; 4]) -> Result<Formula, &'static str> {
-        let index: i32 = args[0];
-        let mut nums: [i32; 2] = [args[2], args[3]];
+        let idx: i32 = args[0];
+        let key: i32 = match Some(args[1]) {
+            Some(1) => rand::thread_rng().gen_range(0..2),
+            Some(2) => rand::thread_rng().gen_range(0..6),
+            Some(_) => rand::thread_rng().gen_range(6..10),
+            None => return Err("Failed to generate rand key"),
+        };
+        let mut nums: [i32; 3] = [
+            rand::thread_rng().gen_range(args[2]..args[3]),
+            rand::thread_rng().gen_range(args[2]..args[3]),
+            rand::thread_rng().gen_range(args[2]..args[3]),
+        ];
 
-        match Some(args[1]) {
+        match Some(key) {
             Some(1) if nums[0] < nums[1] => nums.swap(0, 1),
             Some(2) if nums[0] < nums[1] => nums.swap(0, 1),
             Some(4) if nums[0] > nums[1] => nums.swap(0, 1),
             Some(5) if nums[0] > nums[1] => nums.swap(0, 1),
+            Some(7) if nums[0] + nums[1] - nums[2] < 0 => nums.swap(1, 2),
+            Some(8) if nums[0] - nums[1] + nums[2] < 0 => nums.swap(0, 1),
+            Some(9) => {
+                while nums[0] - nums[1] - nums[2] < 0 {
+                    nums = [
+                        rand::thread_rng().gen_range(args[2]..args[3]),
+                        rand::thread_rng().gen_range(args[2]..args[3]),
+                        rand::thread_rng().gen_range(args[2]..args[3]),
+                    ]
+                }
+            }
             Some(_) => (),
-            None => return Err("Failed to parse nums"),
+            None => return Err("Failed to validate nums"),
         }
 
         Ok(Formula {
-            pattern: match Some(args[1]) {
-                Some(0) => format!("({}) {} + {} = ( )", index, nums[0], nums[1]),
-                Some(1) => format!("({}) {} - {} = ( )", index, nums[0], nums[1]),
-                Some(2) => format!("({}) {} - ( ) = {}", index, nums[0], nums[1]),
-                Some(3) => format!("({}) ( ) - {} = {}", index, nums[0], nums[1]),
-                Some(4) => format!("({}) ( ) + {} = {}", index, nums[0], nums[1]),
-                Some(_) => format!("({}) {} + ( ) = {}", index, nums[0], nums[1]),
+            pattern: match Some(key) {
+                Some(0) => format!("({}) {} + {} = ( )", idx, nums[0], nums[1]),
+                Some(1) => format!("({}) {} - {} = ( )", idx, nums[0], nums[1]),
+                Some(2) => format!("({}) {} - ( ) = {}", idx, nums[0], nums[1]),
+                Some(3) => format!("({}) ( ) - {} = {}", idx, nums[0], nums[1]),
+                Some(4) => format!("({}) ( ) + {} = {}", idx, nums[0], nums[1]),
+                Some(5) => format!("({}) {} + ( ) = {}", idx, nums[0], nums[1]),
+                Some(6) => format!("({}) {} + {} + {} = ( )", idx, nums[0], nums[1], nums[2]),
+                Some(7) => format!("({}) {} + {} - {} = ( )", idx, nums[0], nums[1], nums[2]),
+                Some(8) => format!("({}) {} - {} + {} = ( )", idx, nums[0], nums[1], nums[2]),
+                Some(_) => format!("({}) {} - {} - {} = ( )", idx, nums[0], nums[1], nums[2]),
                 None => return Err("Failed to parse pattern"),
             },
-            answer: match Some(args[1]) {
+            answer: match Some(key) {
                 Some(0) => nums[0] + nums[1],
                 Some(3) => nums[0] + nums[1],
+                Some(6) => nums[0] + nums[1] + nums[2],
+                Some(7) => nums[0] + nums[1] - nums[2],
+                Some(8) => nums[0] - nums[1] + nums[2],
+                Some(9) => nums[0] - nums[1] - nums[2],
                 Some(_) => (nums[0] - nums[1]).abs(),
                 None => return Err("Failed to parse answer"),
             },
         })
-    }
-
-    fn new_ternary(args: [i32; 5]) -> Result<Formula, &'static str> {
-        let index: i32 = args[0];
-        let mut nums: [i32; 3] = [args[2], args[3], args[4]];
-
-        match Some(args[1]) {
-            Some(1) if nums[0] + nums[1] - nums[2] < 0 => nums.swap(1, 2),
-            Some(2) if nums[0] - nums[1] + nums[2] < 0 => nums.swap(0, 1),
-            Some(_) => (),
-            None => return Err("Failed to parse nums"),
-        }
-
-        let (pattern, answer): (String, i32) = match Some(args[1]) {
-            Some(0) => (
-                format!("({}) {} + {} + {} = ( )", index, nums[0], nums[1], nums[2]),
-                nums[0] + nums[1] + nums[2],
-            ),
-            Some(1) => (
-                format!("({}) {} + {} - {} = ( )", index, nums[0], nums[1], nums[2]),
-                nums[0] + nums[1] - nums[2],
-            ),
-            Some(_) => (
-                format!("({}) {} - {} + {} = ( )", index, nums[0], nums[1], nums[2]),
-                nums[0] - nums[1] + nums[2],
-            ),
-            None => return Err("Failed to parse pattern"),
-        };
-
-        Ok(Formula { pattern, answer })
     }
 
     fn print_pattern(&self) {
@@ -253,13 +252,13 @@ impl Formula {
 
 impl FormulaList {
     fn new() -> Result<FormulaList, &'static str> {
-        let lv: (i32, i32) = utils::select_level().unwrap();
-        let preset: [i32; 3] = utils::select_preset().unwrap();
+        let level: i32 = utils::select_level().unwrap();
+        let preset: (String, i32, i32, i32) = utils::select_preset().unwrap();
         let mut list: VecDeque<Formula> = VecDeque::new();
 
-        (0..preset[0])
+        (0..preset.1)
             .progress_with(
-                ProgressBar::new(preset[0].try_into().unwrap()).with_style(
+                ProgressBar::new(preset.1.try_into().unwrap()).with_style(
                     ProgressStyle::default_bar()
                         .template(
                             "[{bytes_per_sec:.yellow}][{bar:40.blue/red}][{percent:.yellow}%]",
@@ -268,40 +267,18 @@ impl FormulaList {
                 ),
             )
             .for_each(|i| {
-                let formula: Formula = match Some(lv.0) {
-                    Some(3) => Formula::new_ternary([
-                        i + 1,
-                        rand::thread_rng().gen_range(0..lv.1),
-                        rand::thread_rng().gen_range(preset[1]..preset[2]),
-                        rand::thread_rng().gen_range(preset[1]..preset[2]),
-                        rand::thread_rng().gen_range(preset[1]..preset[2]),
-                    ]),
-                    Some(_) => Formula::new([
-                        i + 1,
-                        rand::thread_rng().gen_range(0..lv.1),
-                        rand::thread_rng().gen_range(preset[1]..preset[2]),
-                        rand::thread_rng().gen_range(preset[1]..preset[2]),
-                    ]),
-                    None => {
-                        println!("{}", style("Failed to generate new list").red());
+                let formula: Formula = Formula::new([i + 1, level, preset.2, preset.3])
+                    .unwrap_or_else(|error| {
+                        println!("Error: {:?}", style(error).red());
                         process::exit(1);
-                    }
-                }
-                .unwrap_or_else(|error| {
-                    println!("Error: {:?}", style(error).red());
-                    process::exit(1);
-                });
+                    });
                 list.push_back(formula);
             });
 
         Ok(FormulaList {
             list,
-            level: lv.0,
-            mode: if preset[0] == 10 {
-                String::from("练习")
-            } else {
-                String::from("测试")
-            },
+            level,
+            mode: preset.0,
         })
     }
 }
@@ -309,17 +286,17 @@ impl FormulaList {
 mod utils {
     use super::*;
 
-    pub fn select_level() -> std::io::Result<(i32, i32)> {
+    pub fn select_level() -> std::io::Result<i32> {
         let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择难度:")
             .items(&(vec!["难度1 (Easy)", "难度2 (Medium)", "难度3 (Hard)"]))
             .default(0)
             .interact_opt()?;
 
-        let lv: (i32, i32) = match selection {
-            Some(0) => (1, 2),
-            Some(1) => (2, 6),
-            Some(_) => (3, 3),
+        let lv: i32 = match selection {
+            Some(0) => 1,
+            Some(1) => 2,
+            Some(_) => 3,
             None => {
                 println!("{}", style("User canceled").red());
                 process::exit(1);
@@ -329,16 +306,16 @@ mod utils {
         Ok(lv)
     }
 
-    pub fn select_preset() -> std::io::Result<[i32; 3]> {
+    pub fn select_preset() -> std::io::Result<(String, i32, i32, i32)> {
         let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择模式:")
             .items(&(vec!["练习", "测试"]))
             .default(0)
             .interact_opt()?;
 
-        let preset: [i32; 3] = match selection {
-            Some(0) => [10, 1, 20],
-            Some(_) => [50, 1, 20],
+        let preset: (String, i32, i32, i32) = match selection {
+            Some(0) => (String::from("练习"), 10, 1, 20),
+            Some(_) => (String::from("测试"), 50, 1, 20),
             None => {
                 println!("{}", style("User canceled").red());
                 process::exit(1);
@@ -370,19 +347,11 @@ mod utils {
 #[cfg(test)]
 mod test {
     use super::Formula;
-    use rand::Rng;
 
     #[test]
     fn test_ternary_formula() {
         (0..10).for_each(|i| {
-            let formula: Formula = Formula::new_ternary([
-                i + 1,
-                rand::thread_rng().gen_range(0..3),
-                rand::thread_rng().gen_range(1..20),
-                rand::thread_rng().gen_range(1..20),
-                rand::thread_rng().gen_range(1..20),
-            ])
-            .unwrap();
+            let formula: Formula = Formula::new([i + 1, 3, 1, 20]).unwrap();
             println!("{} [{}]", formula.pattern, formula.answer);
         })
     }
