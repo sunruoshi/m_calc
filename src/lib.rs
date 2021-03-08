@@ -1,5 +1,5 @@
 use chrono::{DateTime, Local};
-use console::style;
+use console::{style, Emoji};
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
 use rand::Rng;
@@ -245,24 +245,22 @@ impl FormulaList {
         let (level, mode) = (utils::select_level().unwrap(), String::from(&preset.0));
         let mut list: VecDeque<Formula> = VecDeque::new();
 
-        (0..preset.1)
-            .progress_with(
-                ProgressBar::new(preset.1.try_into().unwrap()).with_style(
-                    ProgressStyle::default_bar()
-                        .template(
-                            "[{bytes_per_sec:.yellow}][{bar:40.blue/red}][{percent:.yellow}%]",
-                        )
-                        .progress_chars("##>"),
-                ),
-            )
-            .for_each(|i| {
-                let formula: Formula = Formula::new([i + 1, level, preset.2, preset.3])
-                    .unwrap_or_else(|error| {
-                        println!("Error: {:?}", style(error).red());
-                        process::exit(1);
-                    });
-                list.push_back(formula);
-            });
+        let bar: ProgressBar = ProgressBar::new(preset.1.try_into().unwrap()).with_style(
+            ProgressStyle::default_bar()
+                .template("{prefix}[{bar:40.blue/red}][{pos:.yellow}/{len:.yellow}]")
+                .progress_chars("##>"),
+        );
+
+        bar.println("\n");
+        bar.set_prefix(&format!("{}", Emoji("🚚 ", ":-)")));
+        (0..preset.1).progress_with(bar).for_each(|i| {
+            let formula: Formula =
+                Formula::new([i + 1, level, preset.2, preset.3]).unwrap_or_else(|error| {
+                    println!("Error: {:?}", style(error).red());
+                    process::exit(1);
+                });
+            list.push_back(formula);
+        });
 
         Ok(FormulaList { list, level, mode })
     }
