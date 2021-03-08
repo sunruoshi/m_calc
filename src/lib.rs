@@ -137,15 +137,13 @@ impl User {
                 formula.print_pattern();
             });
             if utils::select("是否订正").unwrap() {
-                while failed_list.len() > 0 {
-                    if let Some(formula) = failed_list.pop_front() {
-                        println!("{}", style(&formula.pattern).white());
-                        if utils::read_number() == formula.answer {
-                            println!("{}", style("回答正确!").blue());
-                        } else {
-                            failed_list.push_front(formula);
-                            println!("{}", style("回答错误!").red());
-                        }
+                while let Some(formula) = failed_list.pop_front() {
+                    println!("{}", style(&formula.pattern).white());
+                    if utils::read_number() == formula.answer {
+                        println!("{}", style("回答正确!").blue());
+                    } else {
+                        failed_list.push_front(formula);
+                        println!("{}", style("回答错误!").red());
                     }
                 }
                 println!("{}", style("\n订正完成, 太棒了!\n").blue());
@@ -161,9 +159,9 @@ impl User {
     }
 
     fn print_profile(&self) {
-        match Some(self.profile.len()) {
-            Some(0) => println!("{}", style("\n无记录!\n").red()),
-            Some(_) => {
+        match self.profile.len() {
+            0 => println!("{}", style("\n无记录!\n").red()),
+            _ => {
                 let mut count: i32 = 0;
                 self.profile.lines().for_each(|line| {
                     if line.contains('[') {
@@ -173,7 +171,6 @@ impl User {
                 });
                 println!("\n共找到{}条记录\n", style(&count).red());
             }
-            None => (),
         }
     }
 
@@ -185,11 +182,10 @@ impl User {
 impl Formula {
     fn new(args: [i32; 4]) -> Result<Formula, &'static str> {
         let idx: i32 = args[0];
-        let key: i32 = match Some(args[1]) {
-            Some(1) => rand::thread_rng().gen_range(0..2),
-            Some(2) => rand::thread_rng().gen_range(0..6),
-            Some(_) => rand::thread_rng().gen_range(6..10),
-            None => return Err("Failed to generate rand key"),
+        let key: i32 = match args[1] {
+            1 => rand::thread_rng().gen_range(0..2),
+            2 => rand::thread_rng().gen_range(0..6),
+            _ => rand::thread_rng().gen_range(6..10),
         };
         let mut nums: [i32; 3] = [
             rand::thread_rng().gen_range(args[2]..args[3]),
@@ -197,14 +193,12 @@ impl Formula {
             rand::thread_rng().gen_range(args[2]..args[3]),
         ];
 
-        match Some(key) {
-            Some(1) if nums[0] < nums[1] => nums.swap(0, 1),
-            Some(2) if nums[0] < nums[1] => nums.swap(0, 1),
-            Some(4) if nums[0] > nums[1] => nums.swap(0, 1),
-            Some(5) if nums[0] > nums[1] => nums.swap(0, 1),
-            Some(7) if nums[0] + nums[1] - nums[2] < 0 => nums.swap(1, 2),
-            Some(8) if nums[0] - nums[1] + nums[2] < 0 => nums.swap(0, 1),
-            Some(9) => {
+        match key {
+            1 | 2 if nums[0] < nums[1] => nums.swap(0, 1),
+            4 | 5 if nums[0] > nums[1] => nums.swap(0, 1),
+            7 if nums[0] + nums[1] - nums[2] < 0 => nums.swap(1, 2),
+            8 if nums[0] - nums[1] + nums[2] < 0 => nums.swap(0, 1),
+            9 => {
                 while nums[0] - nums[1] - nums[2] < 0 {
                     nums = [
                         rand::thread_rng().gen_range(args[2]..args[3]),
@@ -213,33 +207,29 @@ impl Formula {
                     ]
                 }
             }
-            Some(_) => (),
-            None => return Err("Failed to validate nums"),
+            _ => (),
         }
 
         Ok(Formula {
-            pattern: match Some(key) {
-                Some(0) => format!("({}) {} + {} = ( )", idx, nums[0], nums[1]),
-                Some(1) => format!("({}) {} - {} = ( )", idx, nums[0], nums[1]),
-                Some(2) => format!("({}) {} - ( ) = {}", idx, nums[0], nums[1]),
-                Some(3) => format!("({}) ( ) - {} = {}", idx, nums[0], nums[1]),
-                Some(4) => format!("({}) ( ) + {} = {}", idx, nums[0], nums[1]),
-                Some(5) => format!("({}) {} + ( ) = {}", idx, nums[0], nums[1]),
-                Some(6) => format!("({}) {} + {} + {} = ( )", idx, nums[0], nums[1], nums[2]),
-                Some(7) => format!("({}) {} + {} - {} = ( )", idx, nums[0], nums[1], nums[2]),
-                Some(8) => format!("({}) {} - {} + {} = ( )", idx, nums[0], nums[1], nums[2]),
-                Some(_) => format!("({}) {} - {} - {} = ( )", idx, nums[0], nums[1], nums[2]),
-                None => return Err("Failed to parse pattern"),
+            pattern: match key {
+                0 => format!("({}) {} + {} = ( )", idx, nums[0], nums[1]),
+                1 => format!("({}) {} - {} = ( )", idx, nums[0], nums[1]),
+                2 => format!("({}) {} - ( ) = {}", idx, nums[0], nums[1]),
+                3 => format!("({}) ( ) - {} = {}", idx, nums[0], nums[1]),
+                4 => format!("({}) ( ) + {} = {}", idx, nums[0], nums[1]),
+                5 => format!("({}) {} + ( ) = {}", idx, nums[0], nums[1]),
+                6 => format!("({}) {} + {} + {} = ( )", idx, nums[0], nums[1], nums[2]),
+                7 => format!("({}) {} + {} - {} = ( )", idx, nums[0], nums[1], nums[2]),
+                8 => format!("({}) {} - {} + {} = ( )", idx, nums[0], nums[1], nums[2]),
+                _ => format!("({}) {} - {} - {} = ( )", idx, nums[0], nums[1], nums[2]),
             },
-            answer: match Some(key) {
-                Some(0) => nums[0] + nums[1],
-                Some(3) => nums[0] + nums[1],
-                Some(6) => nums[0] + nums[1] + nums[2],
-                Some(7) => nums[0] + nums[1] - nums[2],
-                Some(8) => nums[0] - nums[1] + nums[2],
-                Some(9) => nums[0] - nums[1] - nums[2],
-                Some(_) => (nums[0] - nums[1]).abs(),
-                None => return Err("Failed to parse answer"),
+            answer: match key {
+                0 | 3 => nums[0] + nums[1],
+                6 => nums[0] + nums[1] + nums[2],
+                7 => nums[0] + nums[1] - nums[2],
+                8 => nums[0] - nums[1] + nums[2],
+                9 => nums[0] - nums[1] - nums[2],
+                _ => (nums[0] - nums[1]).abs(),
             },
         })
     }
@@ -251,8 +241,8 @@ impl Formula {
 
 impl FormulaList {
     fn new() -> Result<FormulaList, &'static str> {
-        let level: i32 = utils::select_level().unwrap();
         let preset: (String, i32, i32, i32) = utils::select_preset().unwrap();
+        let (level, mode) = (utils::select_level().unwrap(), String::from(&preset.0));
         let mut list: VecDeque<Formula> = VecDeque::new();
 
         (0..preset.1)
@@ -274,11 +264,7 @@ impl FormulaList {
                 list.push_back(formula);
             });
 
-        Ok(FormulaList {
-            list,
-            level,
-            mode: preset.0,
-        })
+        Ok(FormulaList { list, level, mode })
     }
 }
 
@@ -366,19 +352,19 @@ mod utils {
 mod test {
     use std::time;
 
-    use super::Formula;
+    use super::FormulaList;
 
     #[test]
     fn test_ternary_formula() {
+        let this: FormulaList = FormulaList::new().unwrap();
         let time_start: time::SystemTime = time::SystemTime::now();
-        (0..100).for_each(|i| {
-            let formula: Formula = Formula::new([i + 1, 3, 1, 20]).unwrap();
-            println!("{} [{}]", formula.pattern, formula.answer);
+        this.list.iter().for_each(|i| {
+            println!("{} [{}]", i.pattern, i.answer);
         });
         match time_start.elapsed() {
             Ok(elapsed) => {
                 let time: u128 = elapsed.as_millis();
-                println!("{}", time);
+                println!("\nTime Cost: {}ms", time);
             }
             Err(e) => {
                 println!("Error: {:?}", e);
