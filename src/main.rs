@@ -5,7 +5,7 @@ use lib::User;
 use std::{env, process};
 
 fn main() {
-    println!("{}", style("\n我的口算 v0.2.0").cyan().bold());
+    println!("{}", style("\n我的口算 v0.2.1").cyan().bold());
 
     let mut user: User = User::new(env::args()).unwrap_or_else(|err| {
         println!("Problem parsing argument: {}", style(err).red());

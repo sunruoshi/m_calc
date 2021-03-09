@@ -78,7 +78,7 @@ impl User {
                 self.print_profile();
             }
             Some(_) => {
-                println!("{}", style("Process exit").red(),);
+                println!("{}", style("Process exit").red());
                 process::exit(1);
             }
             None => {
@@ -348,25 +348,13 @@ mod utils {
 
 #[cfg(test)]
 mod test {
-    use std::time;
-
     use super::FormulaList;
 
     #[test]
     fn test_ternary_formula() {
         let this: FormulaList = FormulaList::new().unwrap();
-        let time_start: time::SystemTime = time::SystemTime::now();
         this.list.iter().for_each(|i| {
             println!("{} [{}]", i.pattern, i.answer);
         });
-        match time_start.elapsed() {
-            Ok(elapsed) => {
-                let time: u128 = elapsed.as_millis();
-                println!("\nTime Cost: {}ms", time);
-            }
-            Err(e) => {
-                println!("Error: {:?}", e);
-            }
-        }
     }
 }

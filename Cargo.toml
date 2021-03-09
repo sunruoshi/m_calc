@@ -1,6 +1,6 @@
 [package]
 name = "m_calc"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Sam <sam@teamzoon.com>"]
 edition = "2018"
 
