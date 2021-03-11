@@ -2,7 +2,7 @@ use chrono::{DateTime, Local};
 use console::{style, Emoji};
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
-use rand::Rng;
+use rand::{distributions::Uniform, Rng};
 use std::{
     collections::VecDeque,
     convert::TryInto,
@@ -10,7 +10,7 @@ use std::{
     error::Error,
     fs,
     io::{ErrorKind, Read},
-    process, time,
+    process, time, usize,
 };
 pub struct User {
     pub username: String,
@@ -182,13 +182,14 @@ impl User {
 impl Formula {
     fn new(args: [i32; 4]) -> Result<Formula, &'static str> {
         let mut rng: rand::prelude::ThreadRng = rand::thread_rng();
+        let range: Uniform<i32> = Uniform::from(args[2]..args[3]);
         let idx: i32 = args[0];
-        let (key, len): (i32, i32) = match args[1] {
+        let (key, len): (i32, usize) = match args[1] {
             1 => (rng.gen_range(0..2), 2),
-            2 => (rng.gen_range(0..6), 2),
+            2 => (rng.gen_range(2..6), 2),
             _ => (rng.gen_range(6..10), 3),
         };
-        let mut nums: Vec<i32> = (0..len).map(|_| rng.gen_range(args[2]..args[3])).collect();
+        let mut nums: Vec<i32> = (&mut rng).sample_iter(&range).take(len).collect();
 
         match key {
             1 | 2 if nums[0] < nums[1] => nums.swap(0, 1),
@@ -197,7 +198,7 @@ impl Formula {
             8 if nums[0] - nums[1] + nums[2] < 0 => nums.swap(0, 1),
             9 => {
                 while nums[0] - nums[1] - nums[2] < 0 {
-                    nums = (0..len).map(|_| rng.gen_range(args[2]..args[3])).collect()
+                    nums = (&mut rng).sample_iter(&range).take(len).collect()
                 }
             }
             _ => (),
