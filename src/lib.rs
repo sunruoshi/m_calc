@@ -43,13 +43,13 @@ impl User {
             Some(arg) => arg,
             None => return Err("Please pass a username"),
         };
-        let mut file =
-            fs::File::open(&String::from(&username)).unwrap_or_else(|error| -> fs::File {
-                if error.kind() == ErrorKind::NotFound {
+        let mut file: fs::File =
+            fs::File::open(&String::from(&username)).unwrap_or_else(|e| -> fs::File {
+                if e.kind() == ErrorKind::NotFound {
                     println!("{}", style("\n记录未找到\n").red());
                     if utils::select("是否新建").unwrap() {
-                        fs::File::create(&String::from(&username)).unwrap_or_else(|error| {
-                            println!("Problem creating the file: {:?}", style(error).red());
+                        fs::File::create(&String::from(&username)).unwrap_or_else(|e| {
+                            println!("Problem creating the file: {:?}", style(e).red());
                             process::exit(1);
                         })
                     } else {
@@ -57,7 +57,7 @@ impl User {
                         process::exit(1);
                     }
                 } else {
-                    println!("Problem opening the file: {:?}", style(error).red());
+                    println!("Problem opening the file: {:?}", style(e).red());
                     process::exit(1);
                 }
             });
@@ -167,7 +167,7 @@ impl User {
                 while let Some(formula) = failed_list.pop_front() {
                     println!("{}", style(&formula.pattern).white());
                     if utils::read_number() == formula.answer {
-                        println!("{}", style("回答正确!").blue());
+                        println!("{}", style("回答正确!").green());
                     } else {
                         failed_list.push_front(formula);
                         println!("{}", style("回答错误!").red());
@@ -175,14 +175,15 @@ impl User {
                 }
                 println!("{}", style("\n订正完成, 太棒了!\n").green());
             }
-            println!("{}\n", style(now).red().underlined());
+            println!("{}\n", style(now).blue().underlined());
         }
 
         self.add_log(log);
 
-        let data: String = serde_json::to_string(&self.profile).expect("JSON Stringify Failed");
-
-        fs::write(&(format!("{}", self.username)), data)?;
+        fs::write(
+            &(format!("{}", self.username)),
+            serde_json::to_string(&self.profile).expect("JSON Stringify Failed"),
+        )?;
 
         Ok(())
     }
@@ -197,7 +198,7 @@ impl User {
         });
         println!(
             "\n共找到{}条记录\n\n{}",
-            style(&count).red(),
+            style(count).red(),
             style("最好成绩:").green()
         );
         (0..self.profile.record.len()).for_each(|i| match Some(self.profile.record[i]) {
@@ -283,8 +284,8 @@ impl FormulaList {
         bar.set_prefix(&format!("{}", Emoji("🚚 ", ":-)")));
         (0..preset.1).progress_with(bar).for_each(|i| {
             let formula: Formula =
-                Formula::new([i + 1, level, preset.2, preset.3]).unwrap_or_else(|error| {
-                    println!("Error: {:?}", style(error).red());
+                Formula::new([i + 1, level, preset.2, preset.3]).unwrap_or_else(|e| {
+                    println!("Error: {:?}", style(e).red());
                     process::exit(1);
                 });
             list.push_back(formula);
