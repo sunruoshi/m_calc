@@ -53,7 +53,7 @@ impl User {
                             process::exit(1);
                         })
                     } else {
-                        println!("{}", style("session abort").red());
+                        println!("{}", style("User canceled").red());
                         process::exit(1);
                     }
                 } else {
@@ -64,19 +64,20 @@ impl User {
 
         let mut data: String = String::new();
 
-        file.read_to_string(&mut data).unwrap_or_else(|_| 0);
-
-        let mut profile: Profile = Profile {
-            name: String::from(&username),
-            record: vec![i32::MAX, i32::MAX, i32::MAX],
-            logs: String::new(),
-        };
-
-        if data.len() != 0 {
-            profile = serde_json::from_str(&data).expect("Init user profile error")
+        match file.read_to_string(&mut data).unwrap_or_else(|_| 0) {
+            0 => Ok(User {
+                username: String::from(&username),
+                profile: Profile {
+                    name: String::from(&username),
+                    record: vec![i32::MAX, i32::MAX, i32::MAX],
+                    logs: String::new(),
+                },
+            }),
+            _ => Ok(User {
+                username,
+                profile: serde_json::from_str(&data).expect("Init user profile error"),
+            }),
         }
-
-        Ok(User { username, profile })
     }
 
     pub fn select(&mut self) -> std::io::Result<()> {
