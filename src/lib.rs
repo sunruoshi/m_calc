@@ -3,6 +3,7 @@ use console::{style, Emoji};
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
 use rand::{distributions::Uniform, Rng};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::VecDeque,
     convert::TryInto,
@@ -14,7 +15,14 @@ use std::{
 };
 pub struct User {
     pub username: String,
-    pub profile: String,
+    pub profile: Profile,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Profile {
+    name: String,
+    record: Vec<i32>,
+    logs: String,
 }
 
 struct Formula {
@@ -36,11 +44,11 @@ impl User {
             None => return Err("Please pass a username"),
         };
         let mut file =
-            fs::File::open(&(format!("{}", &username))).unwrap_or_else(|error| -> fs::File {
+            fs::File::open(&String::from(&username)).unwrap_or_else(|error| -> fs::File {
                 if error.kind() == ErrorKind::NotFound {
                     println!("{}", style("\n记录未找到\n").red());
                     if utils::select("是否新建").unwrap() {
-                        fs::File::create(&(format!("{}", &username))).unwrap_or_else(|error| {
+                        fs::File::create(&String::from(&username)).unwrap_or_else(|error| {
                             println!("Problem creating the file: {:?}", style(error).red());
                             process::exit(1);
                         })
@@ -53,9 +61,20 @@ impl User {
                     process::exit(1);
                 }
             });
-        let mut profile: String = String::new();
 
-        file.read_to_string(&mut profile).unwrap_or_else(|_| 0);
+        let mut data: String = String::new();
+
+        file.read_to_string(&mut data).unwrap_or_else(|_| 0);
+
+        let mut profile: Profile = Profile {
+            name: String::from(&username),
+            record: vec![i32::MAX, i32::MAX, i32::MAX],
+            logs: String::new(),
+        };
+
+        if data.len() != 0 {
+            profile = serde_json::from_str(&data).expect("Init user profile error")
+        }
 
         Ok(User { username, profile })
     }
@@ -109,7 +128,15 @@ impl User {
 
         match time_start.elapsed() {
             Ok(elapsed) => {
-                let time: u32 = elapsed.as_secs().try_into().unwrap();
+                let time: i32 = elapsed.as_secs().try_into().unwrap();
+                let idx: usize = (this.level - 1).try_into().unwrap();
+                if this.mode == String::from("测试")
+                    && score == total
+                    && time < self.profile.record[idx]
+                {
+                    println!("{}", style("\n记录刷新!").green().underlined());
+                    self.profile.record[idx] = time;
+                }
                 log.push_str(&format!(
                     "\n{}\n你的得分: {}分\n你的用时: {}分{}秒\n题数: {}\n",
                     now,
@@ -146,36 +173,43 @@ impl User {
                         println!("{}", style("回答错误!").red());
                     }
                 }
-                println!("{}", style("\n订正完成, 太棒了!\n").blue());
+                println!("{}", style("\n订正完成, 太棒了!\n").green());
             }
             println!("{}\n", style(now).red().underlined());
         }
 
         self.add_log(log);
 
-        fs::write(&(format!("{}", self.username)), &self.profile)?;
+        let data: String = serde_json::to_string(&self.profile).expect("JSON Stringify Failed");
+
+        fs::write(&(format!("{}", self.username)), data)?;
 
         Ok(())
     }
 
     fn print_profile(&self) {
-        match self.profile.len() {
-            0 => println!("{}", style("\n无记录!\n").red()),
-            _ => {
-                let mut count: i32 = 0;
-                self.profile.lines().for_each(|line| {
-                    if line.contains('[') {
-                        count += 1;
-                    }
-                    println!("{}", style(line).white());
-                });
-                println!("\n共找到{}条记录\n", style(&count).red());
+        let mut count: i32 = 0;
+        self.profile.logs.lines().for_each(|line| {
+            if line.contains('[') {
+                count += 1;
             }
-        }
+            println!("{}", style(line).white());
+        });
+        println!(
+            "\n共找到{}条记录\n\n{}",
+            style(&count).red(),
+            style("最好成绩:").green()
+        );
+        (0..self.profile.record.len()).for_each(|i| match Some(self.profile.record[i]) {
+            Some(v) if v != i32::MAX => print!("难度{}: {}分{}秒\n", i + 1, v / 60, v % 60),
+            Some(_) => print!("难度{}: 无\n", i + 1),
+            None => (),
+        });
+        print!("\n");
     }
 
     fn add_log(&mut self, log: String) {
-        self.profile = String::from(&self.profile) + &log;
+        self.profile.logs = String::from(&self.profile.logs) + &log;
     }
 }
 
@@ -342,7 +376,7 @@ mod utils {
 
 #[cfg(test)]
 mod test {
-    use super::FormulaList;
+    use super::*;
 
     #[test]
     fn test_ternary_formula() {
