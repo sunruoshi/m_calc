@@ -36,6 +36,16 @@ struct FormulaList {
     mode: String,
 }
 
+impl Profile {
+    fn stringify(&self) -> String {
+        serde_json::to_string(self).expect("JSON Stringify Failed")
+    }
+
+    fn parse(data: String) -> Profile {
+        serde_json::from_str(&data).expect("Parsing profile error")
+    }
+}
+
 impl User {
     pub fn new(mut args: env::Args) -> Result<User, &'static str> {
         args.next();
@@ -74,7 +84,7 @@ impl User {
             }),
             _ => Ok(User {
                 username,
-                profile: serde_json::from_str(&data).expect("Init user profile error"),
+                profile: Profile::parse(data),
             }),
         }
     }
@@ -183,10 +193,7 @@ impl User {
 
         self.add_log(log);
 
-        fs::write(
-            &(format!("{}", self.username)),
-            serde_json::to_string(&self.profile).expect("JSON Stringify Failed"),
-        )?;
+        fs::write(&self.username, &self.profile.stringify())?;
 
         Ok(())
     }
