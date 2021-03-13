@@ -13,6 +13,7 @@ use std::{
     io::{ErrorKind, Read},
     process, time, usize,
 };
+
 pub struct User {
     pub username: String,
     pub profile: Profile,
@@ -308,62 +309,78 @@ impl FormulaList {
 mod utils {
     use super::*;
 
+    fn select_max_num() -> std::io::Result<i32> {
+        Ok(
+            match Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("请选择数字范围:")
+                .items(&(vec!["1 -> 20", "1 -> 50", "1 -> 100"]))
+                .default(0)
+                .interact_opt()?
+            {
+                Some(0) => 20,
+                Some(1) => 50,
+                Some(_) => 100,
+                None => {
+                    println!("{}", style("User canceled").red());
+                    process::exit(1);
+                }
+            },
+        )
+    }
+
     pub fn select_level() -> std::io::Result<i32> {
-        let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("请选择难度:")
-            .items(&(vec!["难度1 (Easy)", "难度2 (Medium)", "难度3 (Hard)"]))
-            .default(0)
-            .interact_opt()?;
-
-        let lv: i32 = match selection {
-            Some(0) => 1,
-            Some(1) => 2,
-            Some(_) => 3,
-            None => {
-                println!("{}", style("User canceled").red());
-                process::exit(1);
-            }
-        };
-
-        Ok(lv)
+        Ok(
+            match Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("请选择难度:")
+                .items(&(vec!["难度1 (Easy)", "难度2 (Medium)", "难度3 (Hard)"]))
+                .default(0)
+                .interact_opt()?
+            {
+                Some(0) => 1,
+                Some(1) => 2,
+                Some(_) => 3,
+                None => {
+                    println!("{}", style("User canceled").red());
+                    process::exit(1);
+                }
+            },
+        )
     }
 
     pub fn select_preset() -> std::io::Result<(String, i32, i32, i32)> {
-        let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("请选择模式:")
-            .items(&(vec!["练习", "测试"]))
-            .default(0)
-            .interact_opt()?;
-
-        let preset: (String, i32, i32, i32) = match selection {
-            Some(0) => (String::from("练习"), 10, 1, 20),
-            Some(_) => (String::from("测试"), 50, 1, 20),
-            None => {
-                println!("{}", style("User canceled").red());
-                process::exit(1);
-            }
-        };
-
-        Ok(preset)
+        Ok(
+            match Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("请选择模式:")
+                .items(&(vec!["练习", "测试"]))
+                .default(0)
+                .interact_opt()?
+            {
+                Some(0) => (String::from("练习"), 10, 1, select_max_num().unwrap()),
+                Some(_) => (String::from("测试"), 50, 1, select_max_num().unwrap()),
+                None => {
+                    println!("{}", style("User canceled").red());
+                    process::exit(1);
+                }
+            },
+        )
     }
 
     pub fn select(prompt: &str) -> std::io::Result<bool> {
-        let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt(prompt)
-            .items(&(vec!["Yes", "No"]))
-            .default(0)
-            .interact_opt()?;
-
-        let choose: bool = match selection {
-            Some(0) => true,
-            Some(_) => false,
-            None => {
-                println!("{}", style("User canceled").red());
-                process::exit(1);
-            }
-        };
-
-        Ok(choose)
+        Ok(
+            match Select::with_theme(&ColorfulTheme::default())
+                .with_prompt(prompt)
+                .items(&(vec!["Yes", "No"]))
+                .default(0)
+                .interact_opt()?
+            {
+                Some(0) => true,
+                Some(_) => false,
+                None => {
+                    println!("{}", style("User canceled").red());
+                    process::exit(1);
+                }
+            },
+        )
     }
 
     pub fn read_number() -> i32 {
