@@ -43,24 +43,23 @@ impl User {
             Some(arg) => arg,
             None => return Err("Please pass a username"),
         };
-        let mut file: fs::File =
-            fs::File::open(&String::from(&username)).unwrap_or_else(|e| -> fs::File {
-                if e.kind() == ErrorKind::NotFound {
-                    println!("{}", style("\n记录未找到\n").red());
-                    if utils::select("是否新建").unwrap() {
-                        fs::File::create(&String::from(&username)).unwrap_or_else(|e| {
-                            println!("Problem creating the file: {:?}", style(e).red());
-                            process::exit(1);
-                        })
-                    } else {
-                        println!("{}", style("User canceled").red());
+        let mut file: fs::File = fs::File::open(&username).unwrap_or_else(|e| -> fs::File {
+            if e.kind() == ErrorKind::NotFound {
+                println!("{}", style("\n记录未找到\n").red());
+                if utils::select("是否新建").unwrap() {
+                    fs::File::create(&username).unwrap_or_else(|e| {
+                        println!("Problem creating the file: {:?}", style(e).red());
                         process::exit(1);
-                    }
+                    })
                 } else {
-                    println!("Problem opening the file: {:?}", style(e).red());
+                    println!("{}", style("User canceled").red());
                     process::exit(1);
                 }
-            });
+            } else {
+                println!("Problem opening the file: {:?}", style(e).red());
+                process::exit(1);
+            }
+        });
 
         let mut data: String = String::new();
 
@@ -68,7 +67,7 @@ impl User {
             0 => Ok(User {
                 username: String::from(&username),
                 profile: Profile {
-                    name: String::from(&username),
+                    name: username,
                     record: vec![i32::MAX, i32::MAX, i32::MAX],
                     logs: String::new(),
                 },
@@ -135,7 +134,10 @@ impl User {
                     && score == total
                     && time < self.profile.record[idx]
                 {
-                    println!("{}", style("\n记录刷新!").green().underlined());
+                    println!(
+                        "{}",
+                        style(format!("\n记录刷新! {}", Emoji("🎉🎉🎉", ":-)"))).green()
+                    );
                     self.profile.record[idx] = time;
                 }
                 log.push_str(&format!(
@@ -174,7 +176,7 @@ impl User {
                         println!("{}", style("回答错误!").red());
                     }
                 }
-                println!("{}", style("\n订正完成, 太棒了!\n").green());
+                println!("{}", style("\n订正完成!\n").green());
             }
             println!("{}\n", style(now).blue().underlined());
         }
