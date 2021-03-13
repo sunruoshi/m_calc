@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local};
+use chrono::{format, Local};
 use console::{style, Emoji};
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
@@ -120,7 +120,7 @@ impl User {
     }
 
     fn run(&mut self, this: &FormulaList) -> Result<(), Box<dyn Error>> {
-        let now: DateTime<Local> = Local::now();
+        let now: format::DelayedFormat<format::StrftimeItems> = Local::now().format("%F %A %H:%M");
         let time_start: time::SystemTime = time::SystemTime::now();
         let total: u32 = this.list.len().try_into().unwrap();
         let mut score: u32 = 0;
@@ -293,12 +293,12 @@ impl FormulaList {
         bar.println("\n");
         bar.set_prefix(&format!("{}", Emoji("🚚 ", ":-)")));
         (0..preset.1).progress_with(bar).for_each(|i| {
-            let formula: Formula =
+            list.push_back(
                 Formula::new([i + 1, level, preset.2, preset.3]).unwrap_or_else(|e| {
                     println!("Error: {:?}", style(e).red());
                     process::exit(1);
-                });
-            list.push_back(formula);
+                }),
+            );
         });
 
         Ok(FormulaList { list, level, mode })
