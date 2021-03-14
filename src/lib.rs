@@ -154,20 +154,18 @@ impl User {
                 }
                 self.profile.logs.push([
                     format!("{}", now),
-                    format!("{}", this.level),
+                    format!("难度{}", this.level),
                     format!("{}", this.mode),
                     format!("{}分", score * 100 / total),
                     format!("{}分{}秒", time / 60, time % 60),
                 ]);
                 println!(
                     "{}",
-                    style(&format!(
-                        "\n{}\n你的得分: {}分\n你的用时: {}分{}秒\n题数: {}\n",
-                        now,
+                    style(format!(
+                        "\n你的得分: {}分\n你的用时: {}分{}秒\n",
                         score * 100 / total,
                         time / 60,
                         time % 60,
-                        total,
                     ))
                     .yellow()
                 );
