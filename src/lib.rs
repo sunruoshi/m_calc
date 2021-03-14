@@ -22,7 +22,7 @@ pub struct User {
 #[derive(Serialize, Deserialize)]
 pub struct Profile {
     name: String,
-    record: Vec<i32>,
+    record: Vec<(i32, String)>,
     logs: String,
 }
 
@@ -79,7 +79,11 @@ impl User {
                 username: String::from(&username),
                 profile: Profile {
                     name: username,
-                    record: vec![i32::MAX, i32::MAX, i32::MAX],
+                    record: vec![
+                        (i32::MAX, String::new()),
+                        (i32::MAX, String::new()),
+                        (i32::MAX, String::new()),
+                    ],
                     logs: String::new(),
                 },
             }),
@@ -91,13 +95,12 @@ impl User {
     }
 
     pub fn select(&mut self) -> std::io::Result<()> {
-        let selection: Option<usize> = Select::with_theme(&ColorfulTheme::default())
+        match Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择:")
             .items(&(vec!["开始做题", "查看记录", "退出程序"]))
             .default(0)
-            .interact_opt()?;
-
-        match selection {
+            .interact_opt()?
+        {
             Some(0) => {
                 if let Err(e) = self.run(&FormulaList::new().unwrap()) {
                     println!("Application error: {}", style(e).red());
@@ -143,13 +146,13 @@ impl User {
                 let idx: usize = (this.level - 1).try_into().unwrap();
                 if this.mode == String::from("测试")
                     && score == total
-                    && time < self.profile.record[idx]
+                    && time < self.profile.record[idx].0
                 {
                     println!(
                         "{}",
                         style(format!("\n记录刷新! {}", Emoji("🎉🎉🎉", ":-)"))).green()
                     );
-                    self.profile.record[idx] = time;
+                    self.profile.record[idx] = (time, format!("{}", now));
                 }
                 log.push_str(&format!(
                     "\n{}\n你的得分: {}分\n你的用时: {}分{}秒\n题数: {}\n",
@@ -212,8 +215,14 @@ impl User {
             style(count).red(),
             style("最好成绩:").green()
         );
-        (0..self.profile.record.len()).for_each(|i| match Some(self.profile.record[i]) {
-            Some(v) if v != i32::MAX => print!("难度{}: {}分{}秒\n", i + 1, v / 60, v % 60),
+        (0..self.profile.record.len()).for_each(|i| match Some(self.profile.record[i].0) {
+            Some(v) if v != i32::MAX => print!(
+                "难度{}: {}分{}秒 <{}>\n",
+                i + 1,
+                v / 60,
+                v % 60,
+                self.profile.record[i].1
+            ),
             Some(_) => print!("难度{}: 无\n", i + 1),
             None => (),
         });
