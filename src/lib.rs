@@ -2,6 +2,7 @@ use chrono::{format, Local};
 use console::{style, Emoji};
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
+use prettytable::{Cell, Row, Table};
 use rand::{distributions::Uniform, Rng};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -21,7 +22,6 @@ pub struct User {
 
 #[derive(Serialize, Deserialize)]
 pub struct Profile {
-    name: String,
     record: Vec<(i32, String)>,
     logs: String,
 }
@@ -76,9 +76,8 @@ impl User {
 
         match file.read_to_string(&mut data).unwrap_or_else(|_| 0) {
             0 => Ok(User {
-                username: String::from(&username),
+                username,
                 profile: Profile {
-                    name: username,
                     record: vec![
                         (i32::MAX, String::new()),
                         (i32::MAX, String::new()),
@@ -215,18 +214,35 @@ impl User {
             style(count).red(),
             style("最好成绩:").green()
         );
+        self.gen_table().printstd();
+        print!("\n");
+    }
+
+    fn gen_table(&self) -> Table {
+        let mut table: Table = Table::new();
+        table.add_row(Row::new(vec![
+            Cell::new(&self.username).style_spec("b"),
+            Cell::new("用时").style_spec("Fw"),
+            Cell::new("日期").style_spec("Fw"),
+        ]));
         (0..self.profile.record.len()).for_each(|i| match Some(self.profile.record[i].0) {
-            Some(v) if v != i32::MAX => print!(
-                "难度{}: {}分{}秒 <{}>\n",
-                i + 1,
-                v / 60,
-                v % 60,
-                self.profile.record[i].1
-            ),
-            Some(_) => print!("难度{}: 无\n", i + 1),
+            Some(v) if v != i32::MAX => {
+                table.add_row(Row::new(vec![
+                    Cell::new(&format!("难度{}", i + 1)).style_spec("Fw"),
+                    Cell::new(&format!("{}分{}秒", v / 60, v % 60)).style_spec("Fg"),
+                    Cell::new(&format!("{}", self.profile.record[i].1)).style_spec("Fg"),
+                ]));
+            }
+            Some(_) => {
+                table.add_row(Row::new(vec![
+                    Cell::new(&format!("难度{}", i + 1)).style_spec("Fw"),
+                    Cell::new("无").style_spec("Fr"),
+                    Cell::new("无").style_spec("Fr"),
+                ]));
+            }
             None => (),
         });
-        print!("\n");
+        table
     }
 
     fn add_log(&mut self, log: String) {
