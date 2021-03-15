@@ -12,16 +12,18 @@ use std::{
     error::Error,
     fs,
     io::{ErrorKind, Read},
+    path::Path,
     process, time,
 };
 
 pub struct User {
     pub username: String,
-    pub profile: Profile,
+    path: String,
+    profile: Profile,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Profile {
+struct Profile {
     record: Vec<(i32, String)>,
     logs: Vec<[String; 5]>,
 }
@@ -54,11 +56,15 @@ impl User {
             Some(arg) => arg,
             None => return Err("Please pass a username"),
         };
-        let mut file: fs::File = fs::File::open(&username).unwrap_or_else(|e| -> fs::File {
+        if !Path::new("data").exists() {
+            fs::create_dir("data").expect("Create Dirictory Error");
+        }
+        let path: String = format!("data/{}", username);
+        let mut file: fs::File = fs::File::open(&path).unwrap_or_else(|e| -> fs::File {
             if e.kind() == ErrorKind::NotFound {
                 println!("{}", style("\n记录未找到\n").red());
                 if utils::select("是否新建").unwrap() {
-                    fs::File::create(&username).unwrap_or_else(|e| {
+                    fs::File::create(&path).unwrap_or_else(|e| {
                         println!("Problem creating the file: {:?}", style(e).red());
                         process::exit(1);
                     })
@@ -77,6 +83,7 @@ impl User {
         match file.read_to_string(&mut data).unwrap_or_else(|_| 0) {
             0 => Ok(User {
                 username,
+                path,
                 profile: Profile {
                     record: vec![
                         (i32::MAX, String::new()),
@@ -88,6 +95,7 @@ impl User {
             }),
             _ => Ok(User {
                 username,
+                path,
                 profile: Profile::parse(data),
             }),
         }
@@ -209,7 +217,7 @@ impl User {
             println!("{}\n", style(now).blue().underlined());
         }
 
-        fs::write(&self.username, &self.profile.stringify())?;
+        fs::write(&self.path, &self.profile.stringify())?;
 
         Ok(())
     }
