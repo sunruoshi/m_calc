@@ -12,7 +12,7 @@ use std::{
     error::Error,
     fs,
     io::{ErrorKind, Read},
-    process, time, usize,
+    process, time,
 };
 
 pub struct User {
@@ -96,24 +96,33 @@ impl User {
     pub fn select(&mut self) -> std::io::Result<()> {
         match Select::with_theme(&ColorfulTheme::default())
             .with_prompt("请选择:")
-            .items(&(vec!["开始做题", "查看记录", "退出程序"]))
+            .items(&(vec!["开始做题", "最好成绩", "做题记录", "退出程序"]))
             .default(0)
             .interact_opt()?
         {
             Some(0) => {
+                process::Command::new("clear").status().unwrap();
                 if let Err(e) = self.run(&FormulaList::new().unwrap()) {
                     println!("Application error: {}", style(e).red());
                     process::exit(1);
                 }
             }
             Some(1) => {
+                process::Command::new("clear").status().unwrap();
+                self.gen_record().printstd();
+                print!("\n");
+            }
+            Some(2) => {
+                process::Command::new("clear").status().unwrap();
                 self.print_profile();
             }
             Some(_) => {
+                process::Command::new("clear").status().unwrap();
                 println!("{}", style("Process exit").red());
                 process::exit(1);
             }
             None => {
+                process::Command::new("clear").status().unwrap();
                 println!("{}", style("User canceled").red());
                 process::exit(1);
             }
@@ -142,6 +151,14 @@ impl User {
             Ok(elapsed) => {
                 let time: i32 = elapsed.as_secs().try_into().unwrap();
                 let idx: usize = (this.level - 1).try_into().unwrap();
+                self.profile.logs.push([
+                    format!("{}", now),
+                    format!("难度{}", this.level),
+                    format!("{}", this.mode),
+                    format!("{}分", score * 100 / total),
+                    format!("{}分{}秒", time / 60, time % 60),
+                ]);
+                process::Command::new("clear").status().unwrap();
                 if this.mode == String::from("测试")
                     && score == total
                     && time < self.profile.record[idx].0
@@ -152,13 +169,6 @@ impl User {
                     );
                     self.profile.record[idx] = (time, format!("{}", now));
                 }
-                self.profile.logs.push([
-                    format!("{}", now),
-                    format!("难度{}", this.level),
-                    format!("{}", this.mode),
-                    format!("{}分", score * 100 / total),
-                    format!("{}分{}秒", time / 60, time % 60),
-                ]);
                 println!(
                     "{}",
                     style(format!(
@@ -206,41 +216,39 @@ impl User {
 
     fn print_profile(&self) {
         let count: usize = self.profile.logs.len();
-        self.gen_logs().printstd();
-        println!(
-            "\n共找到{}条记录\n\n{}",
-            style(count).red(),
-            style("最好成绩:").green()
-        );
-        self.gen_record().printstd();
-        print!("\n");
+        if count > 0 {
+            self.gen_logs().printstd();
+        }
+        println!("\n共找到{}条记录\n", style(count).red());
     }
 
     fn gen_logs(&self) -> Table {
         let mut table: Table = Table::new();
         table.add_row(Row::new(vec![
+            Cell::new("做题记录").style_spec("Fg"),
             Cell::new("日期").style_spec("Fw"),
             Cell::new("难度").style_spec("Fw"),
             Cell::new("模式").style_spec("Fw"),
             Cell::new("得分").style_spec("Fw"),
             Cell::new("用时").style_spec("Fw"),
         ]));
-        self.profile.logs.iter().for_each(|log| {
+        (0..self.profile.logs.len()).for_each(|i| {
             table.add_row(Row::new(vec![
-                Cell::new(&log[0]).style_spec("Fw"),
-                Cell::new(&log[1]).style_spec("Fw"),
-                Cell::new(&log[2]).style_spec("Fw"),
-                Cell::new(&log[3]).style_spec("Fw"),
-                Cell::new(&log[4]).style_spec("Fw"),
+                Cell::new(&format!("{}", i + 1)).style_spec("cFw"),
+                Cell::new(&self.profile.logs[i][0]).style_spec("Fw"),
+                Cell::new(&self.profile.logs[i][1]).style_spec("Fw"),
+                Cell::new(&self.profile.logs[i][2]).style_spec("Fw"),
+                Cell::new(&self.profile.logs[i][3]).style_spec("Fw"),
+                Cell::new(&self.profile.logs[i][4]).style_spec("Fw"),
             ]));
         });
         table
     }
 
-    fn gen_record(&self) -> Table {
+    pub fn gen_record(&self) -> Table {
         let mut table: Table = Table::new();
         table.add_row(Row::new(vec![
-            Cell::new(&self.username).style_spec("b"),
+            Cell::new("最好成绩").style_spec("Fg"),
             Cell::new("用时").style_spec("Fw"),
             Cell::new("日期").style_spec("Fw"),
         ]));
