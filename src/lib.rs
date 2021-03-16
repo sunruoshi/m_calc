@@ -361,7 +361,7 @@ mod utils {
         Ok(
             match Select::with_theme(&ColorfulTheme::default())
                 .with_prompt("请选择数字范围:")
-                .items(&(vec!["1 -> 20", "1 -> 50", "1 -> 100"]))
+                .items(&(vec!["20以内", "50以内", "100以内"]))
                 .default(0)
                 .interact_opt()?
             {
