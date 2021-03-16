@@ -2,7 +2,7 @@ use chrono::{format, Local};
 use console::{style, Emoji};
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
-use prettytable::{Cell, Row, Table};
+use prettytable::{cell, row, table, Table};
 use rand::{distributions::Uniform, Rng};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -231,49 +231,32 @@ impl User {
     }
 
     fn gen_logs(&self) -> Table {
-        let mut table: Table = Table::new();
-        table.add_row(Row::new(vec![
-            Cell::new("做题记录").style_spec("Fg"),
-            Cell::new("日期").style_spec("Fw"),
-            Cell::new("难度").style_spec("Fw"),
-            Cell::new("模式").style_spec("Fw"),
-            Cell::new("得分").style_spec("Fw"),
-            Cell::new("用时").style_spec("Fw"),
-        ]));
+        let mut table: Table = table!([Fg=>"做题记录", "日期", "难度", "模式", "得分", "用时"]);
         (0..self.profile.logs.len()).for_each(|i| {
-            table.add_row(Row::new(vec![
-                Cell::new(&format!("{}", i + 1)).style_spec("cFw"),
-                Cell::new(&self.profile.logs[i][0]).style_spec("Fw"),
-                Cell::new(&self.profile.logs[i][1]).style_spec("Fw"),
-                Cell::new(&self.profile.logs[i][2]).style_spec("Fw"),
-                Cell::new(&self.profile.logs[i][3]).style_spec("Fw"),
-                Cell::new(&self.profile.logs[i][4]).style_spec("Fw"),
-            ]));
+            table.add_row(row![Fw=>
+                &format!("{}", i + 1),
+                &self.profile.logs[i][0],
+                &self.profile.logs[i][1],
+                &self.profile.logs[i][2],
+                &self.profile.logs[i][3],
+                &self.profile.logs[i][4]
+            ]);
         });
         table
     }
 
     pub fn gen_record(&self) -> Table {
-        let mut table: Table = Table::new();
-        table.add_row(Row::new(vec![
-            Cell::new("最好成绩").style_spec("Fg"),
-            Cell::new("用时").style_spec("Fw"),
-            Cell::new("日期").style_spec("Fw"),
-        ]));
+        let mut table: Table = table!([Fg->"最好成绩", Fw->"用时", Fw->"日期"]);
         (0..self.profile.record.len()).for_each(|i| match Some(self.profile.record[i].0) {
             Some(v) if v != i32::MAX => {
-                table.add_row(Row::new(vec![
-                    Cell::new(&format!("难度{}", i + 1)).style_spec("Fw"),
-                    Cell::new(&format!("{}分{}秒", v / 60, v % 60)).style_spec("Fg"),
-                    Cell::new(&format!("{}", self.profile.record[i].1)).style_spec("Fg"),
-                ]));
+                table.add_row(row![
+                    Fw->&format!("难度{}", i + 1),
+                    Fg->&format!("{}分{}秒", v / 60, v % 60),
+                    Fg->&self.profile.record[i].1
+                ]);
             }
             Some(_) => {
-                table.add_row(Row::new(vec![
-                    Cell::new(&format!("难度{}", i + 1)).style_spec("Fw"),
-                    Cell::new("无").style_spec("Fr"),
-                    Cell::new("无").style_spec("Fr"),
-                ]));
+                table.add_row(row![Fw->&format!("难度{}", i + 1), Fr->"无", Fr->"无"]);
             }
             None => (),
         });
