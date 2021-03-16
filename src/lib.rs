@@ -24,8 +24,8 @@ pub struct User {
 
 #[derive(Serialize, Deserialize)]
 struct Profile {
-    record: Vec<(i32, String)>,
-    logs: Vec<[String; 5]>,
+    record: Vec<(i32, String, i32)>,
+    logs: Vec<[String; 6]>,
 }
 
 struct Formula {
@@ -37,6 +37,7 @@ struct FormulaList {
     list: VecDeque<Formula>,
     level: i32,
     mode: String,
+    range: i32,
 }
 
 impl Profile {
@@ -86,9 +87,9 @@ impl User {
                 path,
                 profile: Profile {
                     record: vec![
-                        (i32::MAX, String::new()),
-                        (i32::MAX, String::new()),
-                        (i32::MAX, String::new()),
+                        (i32::MAX, String::new(), 0),
+                        (i32::MAX, String::new(), 0),
+                        (i32::MAX, String::new(), 0),
                     ],
                     logs: Vec::new(),
                 },
@@ -159,13 +160,14 @@ impl User {
             Ok(elapsed) => {
                 let time: i32 = elapsed.as_secs().try_into().unwrap();
                 let idx: usize = (this.level - 1).try_into().unwrap();
-                self.profile.logs.push([
+                let log: [String; 6] = [
                     format!("{}", now),
                     format!("难度{}", this.level),
                     format!("{}", this.mode),
                     format!("{}分", score * 100 / total),
                     format!("{}分{}秒", time / 60, time % 60),
-                ]);
+                    format!("{}以内", this.range),
+                ];
                 process::Command::new("clear").status().unwrap();
                 if this.mode == String::from("测试")
                     && score == total
@@ -175,18 +177,13 @@ impl User {
                         "{}",
                         style(format!("\n记录刷新! {}", Emoji("🎉🎉🎉", ":-)"))).green()
                     );
-                    self.profile.record[idx] = (time, format!("{}", now));
+                    self.profile.record[idx] = (time, format!("{}", now), this.range);
                 }
                 println!(
                     "{}",
-                    style(format!(
-                        "\n你的得分: {}分\n你的用时: {}分{}秒\n",
-                        score * 100 / total,
-                        time / 60,
-                        time % 60,
-                    ))
-                    .yellow()
+                    style(format!("\n你的得分: {}\n你的用时: {}\n", log[3], log[4],)).green()
                 );
+                self.profile.logs.push(log);
             }
             Err(e) => {
                 println!("Error: {:?}", style(e).red());
@@ -231,7 +228,8 @@ impl User {
     }
 
     fn gen_logs(&self) -> Table {
-        let mut table: Table = table!([Fg=>"做题记录", "日期", "难度", "模式", "得分", "用时"]);
+        let mut table: Table =
+            table!([Fg=>"做题记录", "日期", "难度", "模式", "得分", "用时", "范围"]);
         (0..self.profile.logs.len()).for_each(|i| {
             table.add_row(row![Fw=>
                 &format!("{}", i + 1),
@@ -239,24 +237,26 @@ impl User {
                 &self.profile.logs[i][1],
                 &self.profile.logs[i][2],
                 &self.profile.logs[i][3],
-                &self.profile.logs[i][4]
+                &self.profile.logs[i][4],
+                &self.profile.logs[i][5],
             ]);
         });
         table
     }
 
     pub fn gen_record(&self) -> Table {
-        let mut table: Table = table!([Fg->"最好成绩", Fw->"用时", Fw->"日期"]);
+        let mut table: Table = table!([Fg->"最好成绩", Fw->"用时", Fw->"日期", Fw->"范围"]);
         (0..self.profile.record.len()).for_each(|i| match Some(self.profile.record[i].0) {
             Some(v) if v != i32::MAX => {
                 table.add_row(row![
                     Fw->&format!("难度{}", i + 1),
                     Fg->&format!("{}分{}秒", v / 60, v % 60),
-                    Fg->&self.profile.record[i].1
+                    Fw->&self.profile.record[i].1,
+                    Fw->&format!("{}以内", self.profile.record[i].2),
                 ]);
             }
             Some(_) => {
-                table.add_row(row![Fw->&format!("难度{}", i + 1), Fr->"无", Fr->"无"]);
+                table.add_row(row![Fw->&format!("难度{}", i + 1), Fr->"无", Fr->"无", Fr->"无"]);
             }
             None => (),
         });
@@ -321,7 +321,11 @@ impl Formula {
 impl FormulaList {
     fn new() -> Result<FormulaList, &'static str> {
         let preset: (String, i32, i32, i32) = utils::select_preset().unwrap();
-        let (level, mode) = (utils::select_level().unwrap(), String::from(&preset.0));
+        let (level, mode, range) = (
+            utils::select_level().unwrap(),
+            String::from(&preset.0),
+            preset.3,
+        );
         let mut list: VecDeque<Formula> = VecDeque::new();
 
         let bar: ProgressBar = ProgressBar::new(preset.1.try_into().unwrap()).with_style(
@@ -341,7 +345,12 @@ impl FormulaList {
             );
         });
 
-        Ok(FormulaList { list, level, mode })
+        Ok(FormulaList {
+            list,
+            level,
+            mode,
+            range,
+        })
     }
 }
 

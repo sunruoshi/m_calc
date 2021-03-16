@@ -7,7 +7,7 @@ use std::{env, process};
 fn main() {
     process::Command::new("clear").status().unwrap();
 
-    println!("{}", style("\n我的口算 v0.3.2").cyan().bold());
+    println!("{}", style("\n我的口算 v0.3.3").cyan().bold());
 
     let mut user: User = User::new(env::args()).unwrap_or_else(|e| {
         println!("Problem parsing argument: {}", style(e).red());

@@ -1,6 +1,6 @@
 [package]
 name = "m_calc"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Sam <sam@teamzoon.com>"]
 edition = "2018"
 
@@ -12,7 +12,7 @@ panic = 'abort'
 rand = "0.8.3"
 chrono = "0.4.19"
 console = "0.14.0"
-dialoguer = "0.7.1"
+dialoguer = "0.8.0"
 indicatif = "0.15.0"
 serde_json = "1.0.64"
 serde = { version = "1.0.124", features = ["derive"] }
