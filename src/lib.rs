@@ -148,8 +148,8 @@ impl User {
         let mut failed_list: VecDeque<&Formula> = VecDeque::new();
 
         this.list.iter().for_each(|formula| {
-            formula.print_pattern();
-            if utils::read_number() != formula.answer {
+            formula.print();
+            if !formula.check() {
                 failed_list.push_back(formula);
             } else {
                 score += 1;
@@ -197,12 +197,12 @@ impl User {
                 style(failed_list.len()).yellow()
             );
             failed_list.iter().for_each(|formula| {
-                formula.print_pattern();
+                formula.print();
             });
             if utils::select("是否订正").unwrap() {
                 while let Some(formula) = failed_list.pop_front() {
-                    println!("{}", style(&formula.pattern).white());
-                    if utils::read_number() == formula.answer {
+                    formula.print();
+                    if formula.check() {
                         println!("{}", style("回答正确!").green());
                     } else {
                         failed_list.push_front(formula);
@@ -313,8 +313,29 @@ impl Formula {
         })
     }
 
-    fn print_pattern(&self) {
+    fn print(&self) {
         println!("{}", style(&self.pattern).white());
+    }
+
+    fn check(&self) -> bool {
+        let answer: i32;
+        loop {
+            if let Ok(value) = {
+                let mut input: String = String::new();
+                std::io::stdin()
+                    .read_line(&mut input)
+                    .expect("Read input error");
+                input.trim().to_string()
+            }
+            .parse()
+            {
+                answer = value;
+                break;
+            } else {
+                println!("{}", style("请输入数字!").red());
+            };
+        }
+        answer == self.answer
     }
 }
 
@@ -429,24 +450,6 @@ mod utils {
                 }
             },
         )
-    }
-
-    pub fn read_number() -> i32 {
-        loop {
-            if let Ok(value) = {
-                let mut input: String = String::new();
-                std::io::stdin()
-                    .read_line(&mut input)
-                    .expect("Some error occurred");
-                input.trim().to_string()
-            }
-            .parse()
-            {
-                break value;
-            } else {
-                println!("{}", style("请输入数字!").red());
-            };
-        }
     }
 }
 
