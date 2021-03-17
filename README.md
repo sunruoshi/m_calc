@@ -2,7 +2,7 @@
 
 ### A shell tool for my boy in first grade to practice calculation :)
 
-![video](https://user-images.githubusercontent.com/15625347/111100647-2c936800-8583-11eb-9465-07d2e7fc444e.gif)
+![video](https://user-images.githubusercontent.com/15625347/111419235-14a71a00-8724-11eb-8bee-02d5008be856.gif)
 
 ## Build and Run
 
