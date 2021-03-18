@@ -1,22 +1,13 @@
 mod lib;
 
 use console::style;
-use lib::User;
+use lib::{User, LOGO};
 use std::{env, process};
 
 fn main() {
     process::Command::new("clear").status().unwrap();
 
-    println!(
-        "\n{}",
-        style(
-            r#"
-█▀▄▀█ █▀▀ ▄▀█ █░░ █▀▀
-█░▀░█ █▄▄ █▀█ █▄▄ █▄▄
-            "#
-        )
-        .yellow()
-    );
+    println!("\n{}", style(LOGO).yellow());
 
     let mut user: User = User::new(env::args()).unwrap_or_else(|e| {
         println!("Problem parsing argument: {}", style(e).red());

@@ -16,6 +16,11 @@ use std::{
     process, time,
 };
 
+pub static LOGO: &str = r#"
+█▀▄▀█ █▀▀ ▄▀█ █░░ █▀▀
+█░▀░█ █▄▄ █▀█ █▄▄ █▄▄
+"#;
+
 pub struct User {
     pub username: String,
     path: String,
@@ -70,7 +75,7 @@ impl User {
                         process::exit(1);
                     })
                 } else {
-                    println!("{}", style("User canceled").red());
+                    println!("{}", style(LOGO).red());
                     process::exit(1);
                 }
             } else {
@@ -139,7 +144,7 @@ impl User {
             }
             Some(_) => {
                 process::Command::new("clear").status().unwrap();
-                println!("{}", style("Process exit").red());
+                println!("{}", style(LOGO).red());
                 process::exit(1);
             }
             None => {
