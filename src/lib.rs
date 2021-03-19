@@ -29,7 +29,7 @@ pub struct User {
 
 #[derive(Serialize, Deserialize)]
 struct Profile {
-    record: [[(i32, String); 3]; 3],
+    records: [[(i32, String); 3]; 3],
     logs: Vec<[String; 6]>,
 }
 
@@ -91,7 +91,7 @@ impl User {
                 username,
                 path,
                 profile: Profile {
-                    record: [
+                    records: [
                         [
                             (i32::MAX, String::new()),
                             (i32::MAX, String::new()),
@@ -193,13 +193,13 @@ impl User {
                 process::Command::new("clear").status().unwrap();
                 if this.mode == String::from("测试")
                     && score == total
-                    && time < self.profile.record[i][j].0
+                    && time < self.profile.records[i][j].0
                 {
                     println!(
                         "{}",
                         style(format!("\n记录刷新! {}", Emoji("🎉🎉🎉", ":-)"))).green()
                     );
-                    self.profile.record[i][j] = (time, format!("{}", now));
+                    self.profile.records[i][j] = (time, format!("{}", now));
                 }
                 println!(
                     "{}",
@@ -246,15 +246,15 @@ impl User {
         if count > 0 {
             let mut table: Table =
                 table!([Fg=>"做题记录", "日期", "难度", "模式", "得分", "用时", "范围"]);
-            (0..self.profile.logs.len()).for_each(|i| {
+            self.profile.logs.iter().enumerate().for_each(|(i, log)| {
                 table.add_row(row![Fw=>
                     &format!("{}", i + 1),
-                    &self.profile.logs[i][0],
-                    &self.profile.logs[i][1],
-                    &self.profile.logs[i][2],
-                    &self.profile.logs[i][3],
-                    &self.profile.logs[i][4],
-                    &self.profile.logs[i][5],
+                    &log[0],
+                    &log[1],
+                    &log[2],
+                    &log[3],
+                    &log[4],
+                    &log[5],
                 ]);
             });
             table.printstd();
@@ -263,31 +263,36 @@ impl User {
     }
 
     fn print_record(&self) {
-        (0..self.profile.record.len()).for_each(|i| {
-            let mut table: Table = table!([Fg->&format!("难度{}", i + 1), Fw->"用时", Fw->"日期"]);
-            (0..self.profile.record[i].len()).for_each(|j| {
-                let range: i32 = match j {
-                    0 => 20,
-                    1 => 50,
-                    _ => 100,
-                };
-                match Some(self.profile.record[i][j].0) {
-                    Some(v) if v != i32::MAX => {
-                        table.add_row(row![
-                            Fw->&format!("{}以内", range),
-                            Fg->&format!("{}分{}秒", v / 60, v % 60),
-                            Fw->&self.profile.record[i][j].1,
-                        ]);
+        self.profile
+            .records
+            .iter()
+            .enumerate()
+            .for_each(|(i, record)| {
+                let mut table: Table =
+                    table!([Fg->&format!("难度{}", i + 1), Fw->"用时", Fw->"日期"]);
+                record.iter().enumerate().for_each(|(i, v)| {
+                    let range: i32 = match i {
+                        0 => 20,
+                        1 => 50,
+                        _ => 100,
+                    };
+                    match Some(v.0) {
+                        Some(time) if time != i32::MAX => {
+                            table.add_row(row![
+                                Fw->&format!("{}以内", range),
+                                Fg->&format!("{}分{}秒", time / 60, time % 60),
+                                Fw->&v.1,
+                            ]);
+                        }
+                        Some(_) => {
+                            table.add_row(row![Fw->&format!("{}以内", range), Fr->"无", Fr->"无"]);
+                        }
+                        None => (),
                     }
-                    Some(_) => {
-                        table.add_row(row![Fw->&format!("{}以内", range), Fr->"无", Fr->"无"]);
-                    }
-                    None => (),
-                }
-            });
-            table.printstd();
-            print!("\n");
-        })
+                });
+                table.printstd();
+                print!("\n");
+            })
     }
 }
 
