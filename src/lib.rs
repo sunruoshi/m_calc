@@ -34,7 +34,7 @@ struct Profile {
 }
 
 struct Formula {
-    pattern: String,
+    notation: String,
     answer: i32,
 }
 
@@ -322,7 +322,7 @@ impl Formula {
         }
 
         Ok(Formula {
-            pattern: match key {
+            notation: match key {
                 0 => format!("({}) {} + {} = ( )", idx, nums[0], nums[1]),
                 1 => format!("({}) {} - {} = ( )", idx, nums[0], nums[1]),
                 2 => format!("({}) {} - ( ) = {}", idx, nums[0], nums[1]),
@@ -346,7 +346,7 @@ impl Formula {
     }
 
     fn print(&self) {
-        println!("{}", style(&self.pattern).white());
+        println!("{}", style(&self.notation).white());
     }
 
     fn check(&self) -> bool {
@@ -493,7 +493,7 @@ mod test {
     fn test_ternary_formula() {
         let this: FormulaList = FormulaList::new().unwrap();
         this.list.iter().for_each(|i| {
-            println!("{} [{}]", i.pattern, i.answer);
+            println!("{} [{}]", i.notation, i.answer);
         });
     }
 }
