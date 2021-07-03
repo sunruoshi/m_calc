@@ -60,7 +60,7 @@ impl User {
         args.next();
         let username: String = match args.next() {
             Some(arg) => arg,
-            None => return Err("Please pass a username"),
+            None => "Foo".to_string(),
         };
         if !Path::new("data").exists() {
             fs::create_dir("data").expect("Create Dirictory Error");
