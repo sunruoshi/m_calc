@@ -4,6 +4,13 @@
 
 ![video](https://user-images.githubusercontent.com/15625347/111419235-14a71a00-8724-11eb-8bee-02d5008be856.gif)
 
+### 使用Docker运行
+
+1. [安装Docker](https://www.docker.com/)
+2. 拉取Docker镜像：`docker pull zealot27/m_calc:alpine`
+3. 创建一个Volume用于保存数据：`docker volume create m-calc-vol`
+4. 挂载Volume启动：`docker run -ti --rm -v m-calc-vol:/m_calc zealot27/m_calc:alpine [用户名/可选]`
+
 ### 功能和特性
 
 - 随机生成算式
